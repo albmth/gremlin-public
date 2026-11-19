@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block page %}create{% endblock %}
+{% block main %}
+<div class="studio">
+  <h1 class="lede">Put a person or animal from a photo into a short clip.</h1>
+
+  {% if showcase_available %}
+  <div class="example" role="group" aria-label="Example" data-example>
+    <figure class="ex-photo">
+      <img src="{{ asset('showcase/reference.jpg') }}" width="434" height="692" alt="Example photo: a snow leopard" decoding="async">
+      <figcaption>Photo</figcaption>
+    </figure>
+    <span class="ex-op" aria-hidden="true">+</span>
+    <figure class="ex-clip">
+      <video src="{{ asset('showcase/clip.mp4') }}" poster="{{ asset('showcase/clip.jpg') }}" width="498" height="324" muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-label="Example clip: a footballer celebrating"></video>
+      <figcaption>Clip</figcaption>
+    </figure>
+    <span class="ex-op" aria-hidden="true">→</span>
+    <figure class="ex-result">
+      <video src="{{ asset('showcase/result.mp4') }}" poster="{{ asset('showcase/result.jpg') }}" width="498" height="324" muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-label="Result: the snow leopard doing the celebration"></video>
+      <figcaption>Result</figcaption>
+    </figure>
+  </div>
+  {% endif %}
+
+  <p class="notice" data-active hidden><span data-active-text></span> <a data-active-link></a></p>
+  <p class="notice" data-blocked hidden></p>
+
+  <div class="uploads">
+    <label class="drop" data-drop="photo">
+      <input disabled type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" class="visually-hidden" data-file="photo">
+      <span class="drop-text"><strong>Upload photo</strong><span data-drop-note>JPG, PNG, HEIC</span></span>
+      <img class="drop-preview" alt="Your photo" data-photo-preview hidden>
+    </label>
+    <label class="drop" data-drop="clip">
+      <input disabled type="file" accept="video/mp4,video/quicktime,video/webm,image/gif,.mov,.mp4,.webm,.gif" class="visually-hidden" data-file="clip">
+      <span class="drop-text"><strong>Upload clip</strong><span data-drop-note>3 s or longer · MP4, MOV, GIF</span></span>
+      <video class="drop-preview" muted playsinline loop autoplay data-clip-video hidden aria-label="Your clip"></video>
+      <img class="drop-preview" alt="Your clip" data-clip-image hidden>
+    </label>
+  </div>
+
+  <div class="progress" data-upload-progress hidden><div></div></div>
+  <p class="notice" data-tone="error" data-error hidden></p>
+  <p class="fine" data-network hidden></p>
+  <button class="btn btn-accent btn-wide btn-lg" type="button" data-submit disabled>Generate</button>
+  <p class="fine">Private preview · Deleted when you close it</p>
+</div>
+{% endblock %}

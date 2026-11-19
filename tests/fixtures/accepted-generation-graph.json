@@ -1,0 +1,237 @@
+{
+  "unet": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "wan2.1_14B_SCAIL_2_fp16.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "dpo": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "unet",
+        0
+      ],
+      "lora_name": "wan2.1_SCAIL_2_DPO_lora_bf16.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "relight": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "dpo",
+        0
+      ],
+      "lora_name": "wan2.1_SCAIL_2_relight_lora_bf16.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "shift": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": [
+        "relight",
+        0
+      ],
+      "shift": 3.0
+    }
+  },
+  "text": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan"
+    }
+  },
+  "positive": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "text",
+        0
+      ],
+      "text": "A man with a brown mullet haircut, a swept fringe and longer hair falling over the back of his neck, light stubble and a short goatee, is fighting kung fu style on a wet city street at night. He has a normal-sized head and a lean build. He wears a faded blue denim jacket with a collar and chest pockets over a black crew-neck t-shirt. He raises both fists in a fighting guard, throws fast punches and swings his arms, lunges forward close to the camera, then steps back into his guard, moving naturally in front of a dark warehouse wall with yellow barriers, parked cars with glowing headlights and orange street lights reflecting on the wet pavement."
+    }
+  },
+  "negative": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "text",
+        0
+      ],
+      "text": ""
+    }
+  },
+  "vae": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    }
+  },
+  "vision": {
+    "class_type": "CLIPVisionLoader",
+    "inputs": {
+      "clip_name": "clip_vision_h.safetensors"
+    }
+  },
+  "ref": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "e7ab2569-cf52-4b22-ae0a-7b1606006903-masked-reference.png"
+    }
+  },
+  "ref_mask": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "e7ab2569-cf52-4b22-ae0a-7b1606006903-reference-mask.png"
+    }
+  },
+  "vision_encode": {
+    "class_type": "CLIPVisionEncode",
+    "inputs": {
+      "clip_vision": [
+        "vision",
+        0
+      ],
+      "image": [
+        "ref",
+        0
+      ],
+      "crop": "none"
+    }
+  },
+  "video": {
+    "class_type": "LoadVideo",
+    "inputs": {
+      "file": "e7ab2569-cf52-4b22-ae0a-7b1606006903-driving.mkv"
+    }
+  },
+  "frames": {
+    "class_type": "GetVideoComponents",
+    "inputs": {
+      "video": [
+        "video",
+        0
+      ]
+    }
+  },
+  "mask_video": {
+    "class_type": "LoadVideo",
+    "inputs": {
+      "file": "e7ab2569-cf52-4b22-ae0a-7b1606006903-masks.mkv"
+    }
+  },
+  "masks": {
+    "class_type": "GetVideoComponents",
+    "inputs": {
+      "video": [
+        "mask_video",
+        0
+      ]
+    }
+  },
+  "condition": {
+    "class_type": "WanSCAILToVideo",
+    "inputs": {
+      "positive": [
+        "positive",
+        0
+      ],
+      "negative": [
+        "negative",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ],
+      "width": 512,
+      "height": 512,
+      "length": 57,
+      "batch_size": 1,
+      "pose_video": [
+        "frames",
+        0
+      ],
+      "pose_video_mask": [
+        "masks",
+        0
+      ],
+      "replacement_mode": true,
+      "pose_strength": 1.0,
+      "pose_start": 0.0,
+      "pose_end": 1.0,
+      "reference_image": [
+        "ref",
+        0
+      ],
+      "reference_image_mask": [
+        "ref_mask",
+        0
+      ],
+      "clip_vision_output": [
+        "vision_encode",
+        0
+      ],
+      "video_frame_offset": 0,
+      "previous_frame_count": 5
+    }
+  },
+  "sample": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "shift",
+        0
+      ],
+      "positive": [
+        "condition",
+        0
+      ],
+      "negative": [
+        "condition",
+        1
+      ],
+      "latent_image": [
+        "condition",
+        2
+      ],
+      "seed": 42,
+      "steps": 40,
+      "cfg": 5.0,
+      "sampler_name": "uni_pc_bh2",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "decode": {
+    "class_type": "VAEDecodeTiled",
+    "inputs": {
+      "samples": [
+        "sample",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ],
+      "tile_size": 512,
+      "overlap": 64,
+      "temporal_size": 64,
+      "temporal_overlap": 8
+    }
+  },
+  "save": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "decode",
+        0
+      ],
+      "filename_prefix": "e7ab2569-cf52-4b22-ae0a-7b1606006903/generated"
+    }
+  }
+}

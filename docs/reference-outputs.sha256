@@ -1,0 +1,58 @@
+# SHA-256 of current and historical accepted outputs and Enzo provenance (files stay outside Git under artifacts/).
+# Baseline roles and acceptance evidence: docs/fixtures.md and docs/validation.md.
+# Verify from the repository root: rg -v '^#' docs/reference-outputs.sha256 | shasum -a 256 -c
+# Preserved original H100 references.
+1bc6153e2bf312ca3d7bcc61b08c472ca035c58fbe62c8fa219b2d3c4ad94803  artifacts/e2e/download-kungfu/result.mp4
+2e4f214bd36a9d45be7c735c0dca99fe19f5e4bed0bd063f3d9748c0b6741c76  artifacts/e2e/download-kungfu/result.webp
+7f9d6f01253aebf0dc7f7159029ef4fb9e24d0db391443e47a90471006a21380  artifacts/e2e/download-kungfu/poster.jpg
+f9a848d4fd1063fc9ad381fb664def18eb5723e9cc5faa50f115fa01ab634a0d  artifacts/e2e/download-enzo/result.mp4
+7e5200d4f44b6ea1289ca97033a96e3542cb901bc0ee5eb1c9073cb6b2c777db  artifacts/e2e/download-enzo/result.webp
+4da7cd78ded68023ade89a696a1f94fed06f458e3d9e67fb8261c985dc6bad50  artifacts/e2e/download-enzo/poster.jpg
+# Current accepted RTX 5090 Kung Fu baseline: 12-step complex-motion pod run c12, owner approved on 26 October 2026.
+e2b618ab91e1135daddd35a274f4f879300abc9ec4218c5b1ef5a5977424fc93  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/result.mp4
+a9cd998759a2029de5c4ab5954372065e049c3ab00a7ccc8b5e4c274b61049d9  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/result.webp
+472e4e1f58e4fa2710bbe85e62e808d4a0adb869a2c25f37d26df6de20cc5da4  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/poster.jpg
+5e9b99f5ac2429f3c3cf0c3aadd652872469d2c5063b13194d1e4976814e615f  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/result.json
+f27e7042a7f3995ec2e518a8a84630b1df18be636eda4a92d022aa33416950f3  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/preparation.json
+905b958e952c3390a1bfba4981ff18584633a252e1f72db2d026035ef5cf480d  artifacts/architecture-review-2026-10-26/runs/c12-kungfu/generation-graph.json
+# Previous 20-step Kung Fu baseline, retained for regression comparisons.
+39f3d85183e027aa3c38d21e9c0c67f96169f230be47b0bdb4785632a99dd69a  artifacts/candidates/runs/ref20-ck-kungfu/result.mp4
+cea0dd325fe7cc0140bc12103f168d0aecdfa33e2795e6fffdc9d08488d5d73f  artifacts/candidates/runs/ref20-ck-kungfu/result.webp
+6759e08eb0c46057773954835c86dc6677c735d43bdd555792364f8179acd00f  artifacts/candidates/runs/ref20-ck-kungfu/poster.jpg
+# Previous accepted Enzo baseline, retained unchanged for regression comparisons.
+9ad83e0aef3c1eda9dafe5e28306e1f4df7a5de76462e53666a5e010be3a5ce1  artifacts/candidates/runs/distill8-ck-enzo/result.mp4
+4c35d021fdb67fd990501ee363a781534f40ef0ddd3d99385186d269f597cded  artifacts/candidates/runs/distill8-ck-enzo/result.webp
+338306d3ab65542a67d92d79ddcf484b754271d2187e4e55a1799a2625b7e936  artifacts/candidates/runs/distill8-ck-enzo/poster.jpg
+# Run G2 Kung Fu, equivalent to the current baseline under the strict decoded-output gate.
+4eaae844753d6245ae0a43cb178e35a394b6846a2dd7b51d99a89998e9e631d2  artifacts/qualification/g-kungfu-complex/result.mp4
+cea0dd325fe7cc0140bc12103f168d0aecdfa33e2795e6fffdc9d08488d5d73f  artifacts/qualification/g-kungfu-complex/result.webp
+6759e08eb0c46057773954835c86dc6677c735d43bdd555792364f8179acd00f  artifacts/qualification/g-kungfu-complex/poster.jpg
+# Current accepted Enzo baseline, exact existing Run G1 artifact approved by the owner on 20 October 2026.
+ab05f7f6bef23520c386f2f0db4e76f6564bbddb1a4fce543c20022640a341ae  artifacts/qualification/g-enzo-simple/result.mp4
+1bdee0ee6bcc2329720f3e478e3eab82ff83c6fb137a9d9fb7b0e755a54ab323  artifacts/qualification/g-enzo-simple/result.webp
+d2ba314ed9fc58ce96682b4edac7b8840b18a238fa693310ea2737d52ba2a1b9  artifacts/qualification/g-enzo-simple/poster.jpg
+# Previous Enzo baseline provenance.
+e13da0a8fb6aab9c47b418d2850f171e55a07941c48f3785d28cc5bfd223d8ed  artifacts/candidates/runs/distill8-ck-enzo/result.json
+14bbcaeddf418812f0d433351fc4f74be6691d926e0d0f243fcc27cdaae87819  artifacts/candidates/runs/distill8-ck-enzo/preparation.json
+1747390f7aa5d36854fbeac23dc614bf4da82467d528d748fd03583113632645  artifacts/candidates/runs/distill8-ck-enzo/generation-graph.json
+# Current Enzo baseline provenance.
+aea2ce9bfa673d9d49a79444cd67bc049abc1bea2c4b2db0541a365e404e4beb  artifacts/qualification/g-enzo-simple/result.json
+14bbcaeddf418812f0d433351fc4f74be6691d926e0d0f243fcc27cdaae87819  artifacts/qualification/g-enzo-simple/preparation.json
+521ed5f08e0d66e641d75651c4fd3cf2ebc532fc3ac8e956c4b6e03e9289638b  artifacts/qualification/g-enzo-simple/generation-graph.json
+# Alternate PRO 4500 outputs, owner accepted both paired videos on 23 October 2026.
+7dab61d3f2b6614f4692b120c3d375d558a3df93cfb3b85850ed718c297c5f0d  artifacts/qualification/pro4500-kungfu-complex/result.mp4
+43594589023f2fdb5e4091105ed2fc9321d17463dc23a829bc1fe0dd5dcb9a38  artifacts/qualification/pro4500-kungfu-complex/result.webp
+f9a670753b728f78227f2f41ea15f12cd049dfb71fa84353fb742026ca118526  artifacts/qualification/pro4500-kungfu-complex/poster.jpg
+406d9c4ab33c558de54b7a9499ae10f6573ddd20c51950d32095e0346e9c6aea  artifacts/qualification/pro4500-kungfu-complex/diagnostics.json
+d107720745eb85b67994ad1789749a1e868099d1c80daeab0c45e426245c04b2  artifacts/qualification/pro4500-kungfu-complex/diagnostics.zip
+cdf6388999d287b33d8d1944b18eeb34af794fd49184076a6dfc015bf21d3687  artifacts/qualification/pro4500-enzo-simple/result.mp4
+402533fef64919d73b6f0fe4b0642050b581d462d1811d299f956d3f63db40e9  artifacts/qualification/pro4500-enzo-simple/result.webp
+a7c8a01ef864de822c4c2651006a5641f96b4e10f7ae957a0d4a689a415bfb28  artifacts/qualification/pro4500-enzo-simple/poster.jpg
+baad73e24ebe098b2dd07203061535c5835a833a59991b192132b47a5f36bc89  artifacts/qualification/pro4500-enzo-simple/diagnostics.json
+710a655cc76e8ba8496fbb6499bdb6dd07fa65d311686e8c8fc89c32dde8a605  artifacts/qualification/pro4500-enzo-simple/diagnostics.zip
+# PRO 4500 12-step complex-motion Kung Fu from image cb8e8fcd, owner accepted on 27 October 2026; the PRO 4500 control for the 12-step tier.
+9b3ca4315d8471a201e2416d47963ddbf877003bb3f4d871d21c699b88c55417  artifacts/qualification/boot-tier-20261026-pro4500-kungfu-complex/result.mp4
+0add2cf28762fc5ebf0f943e63ddae7666a15961100619ff6295cf977d76c70b  artifacts/qualification/boot-tier-20261026-pro4500-kungfu-complex/result.webp
+a12d221c108a1e240e217fe480920a593ed8a7a7220bb53e7dccba92516890de  artifacts/qualification/boot-tier-20261026-pro4500-kungfu-complex/poster.jpg
+1fa38cb99f9c0f0f758847b95df405200e6b0960843b674066b2ca1487fb5e25  artifacts/qualification/boot-tier-20261026-pro4500-kungfu-complex/diagnostics.json
+ecda49be6348302b929fb520bff6ac9344d8c2c3bb91b0a9aa6bfbc4b5ee64ac  artifacts/qualification/boot-tier-20261026-pro4500-kungfu-complex/diagnostics.zip

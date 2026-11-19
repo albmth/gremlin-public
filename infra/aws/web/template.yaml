@@ -1,0 +1,398 @@
+AWSTemplateFormatVersion: '2010-09-09'
+# LanguageExtensions resolves the conditional deletion policies before SAM expands the functions.
+Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
+Description: >-
+  Gremlin's public website (staging or prod) above the Gremlin API, which it calls as one direct
+  client. Anonymous visitors, one shared video allowance, and nothing that costs money
+  while idle: an API function behind a public Function URL (pages and the /api/v1 JSON API), a
+  worker woken by a one-minute schedule and by the API, one on-demand DynamoDB table and one private
+  S3 bucket reached through short-lived presigned URLs. No VPC, NAT, gateway, queue or provisioned
+  capacity.
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [staging, prod]
+  BuildCommit:
+    Type: String
+    AllowedPattern: '[0-9a-f]{40}'
+  # The browser-facing origin. The first deployment of a stack without a custom domain uses a
+  # placeholder; web.sh then redeploys with the Function URL's own origin.
+  PublicOrigin:
+    Type: String
+    AllowedPattern: '^https://[A-Za-z0-9.-]+$'
+  GremlinBaseUrl:
+    Type: String
+    AllowedPattern: '^https://[A-Za-z0-9./-]+$'
+  # The Replicate model that writes each video's scene description (google/gemini-2.5-flash);
+  # its token is the SSM SecureString /gremlin/<env>/web/replicate-token, which must exist before
+  # deploying, or the functions fail at start. Empty means the site refuses new videos; `fixed`
+  # sends a neutral description without any model.
+  CaptionModel:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[A-Za-z0-9._:/-]{1,128}$'
+  # The descriptions' own spending caps in micro-USD per UTC day and month; once reached, videos
+  # use the fixed description.
+  CaptionDailyMicrousd:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  CaptionMonthlyMicrousd:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  # Videos everyone shares until an operator replenishes them (web.sh replenish); Gremlin's
+  # spending authority bounds GPU cost beneath this.
+  TotalGenerations:
+    Type: Number
+    Default: 10
+    MinValue: 0
+  AddressHourlyDrafts:
+    Type: Number
+    Default: 12
+    MinValue: 0
+  # Videos one network address may start per UTC day, out of the shared allowance.
+  AddressDailyVideos:
+    Type: Number
+    Default: 3
+    MinValue: 0
+  # Results are public and deleted this long after they finish. The most is below the bucket's
+  # two-day backstop for results.
+  RetentionHours:
+    Type: Number
+    Default: 6
+    MinValue: 1
+    MaxValue: 24
+  LogRetentionDays:
+    Type: Number
+    Default: 7
+    AllowedValues: [1, 3, 5, 7, 14, 30]
+  AlertEmail:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[^@\s]+@[^@\s]+\.[^@\s]+$'
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
+  HasAlerts: !And [!Condition IsProd, !Not [!Equals [!Ref AlertEmail, '']]]
+  # `fixed` sends a neutral description without calling any model (gremlin_web.assist).
+  Captions: !Not [!Or [!Equals [!Ref CaptionModel, ''], !Equals [!Ref CaptionModel, fixed]]]
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Handler: gremlin_web.handler.handler
+    Architectures: [arm64]
+    CodeUri: ../../../web
+    PermissionsBoundary: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/gremlin-ctl-workload-boundary
+    Environment:
+      Variables:
+        GREMLIN_WEB_ENVIRONMENT: !Ref Environment
+        GREMLIN_WEB_BUILD_COMMIT: !Ref BuildCommit
+        GREMLIN_WEB_REGION: !Ref AWS::Region
+        GREMLIN_WEB_TABLE_NAME: !Ref StateTable
+        GREMLIN_WEB_MEDIA_BUCKET: !Ref MediaBucket
+        GREMLIN_WEB_WORKER_FUNCTION: !Sub ${AWS::StackName}-worker
+        GREMLIN_WEB_PUBLIC_ORIGIN: !Ref PublicOrigin
+        GREMLIN_WEB_MONITORING_ENABLED: !If [HasAlerts, 'true', 'false']
+        GREMLIN_WEB_GREMLIN_BASE_URL: !Ref GremlinBaseUrl
+        GREMLIN_WEB_GREMLIN_TOKEN_PARAMETER: !Sub /gremlin/${Environment}/web/gremlin-token
+        GREMLIN_WEB_TOTAL_GENERATIONS: !Ref TotalGenerations
+        GREMLIN_WEB_ADDRESS_HOURLY_DRAFTS: !Ref AddressHourlyDrafts
+        GREMLIN_WEB_ADDRESS_DAILY_VIDEOS: !Ref AddressDailyVideos
+        GREMLIN_WEB_RETENTION_HOURS: !Ref RetentionHours
+        GREMLIN_WEB_CAPTION_MODEL: !Ref CaptionModel
+        GREMLIN_WEB_REPLICATE_TOKEN_PARAMETER: !If
+          - Captions
+          - !Sub /gremlin/${Environment}/web/replicate-token
+          - ''
+        GREMLIN_WEB_CAPTION_DAILY_MICROUSD: !Ref CaptionDailyMicrousd
+        GREMLIN_WEB_CAPTION_MONTHLY_MICROUSD: !Ref CaptionMonthlyMicrousd
+
+Resources:
+  # Only fixed infrastructure names and aggregate health reach this topic, never personal data.
+  Alerts:
+    Type: AWS::SNS::Topic
+    Condition: HasAlerts
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-alerts
+
+  AlertsPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Condition: HasAlerts
+    Properties:
+      Topics: [!Ref Alerts]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudwatch.amazonaws.com}
+            Action: sns:Publish
+            Resource: !Ref Alerts
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${AWS::StackName}-*
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlerts
+    Properties:
+      TopicArn: !Ref Alerts
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  ApiFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlerts
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-api-failures
+      AlarmDescription: The website answered 5xx. Inspect `web.sh prod logs`.
+      Namespace: AWS/Lambda
+      MetricName: Url5xxCount
+      Dimensions: [{Name: FunctionName, Value: !Ref ApiFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref Alerts]
+      OKActions: [!Ref Alerts]
+
+  # The sweep emits one sample a minute; missing samples mean the schedule or worker stopped,
+  # which leaves generations unreconciled.
+  WorkerHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlerts
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-worker-health
+      AlarmDescription: The website worker stopped reporting. Inspect `web.sh prod logs` and `web.sh prod state`.
+      Namespace: Gremlin/Web
+      MetricName: Healthy
+      Dimensions: [{Name: Environment, Value: !Ref Environment}]
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 10
+      DatapointsToAlarm: 5
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref Alerts]
+      OKActions: [!Ref Alerts]
+
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
+    Properties:
+      TableName: !Sub ${AWS::StackName}-state
+      DeletionProtectionEnabled: !If [IsProd, true, false]
+      BillingMode: PAY_PER_REQUEST
+      OnDemandThroughput: {MaxReadRequestUnits: 100, MaxWriteRequestUnits: 100}
+      AttributeDefinitions:
+        - {AttributeName: pk, AttributeType: S}
+        - {AttributeName: sk, AttributeType: S}
+      KeySchema:
+        - {AttributeName: pk, KeyType: HASH}
+        - {AttributeName: sk, KeyType: RANGE}
+      TimeToLiveSpecification: {AttributeName: expire_at, Enabled: true}
+
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-media-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ObjectOwnership: BucketOwnerEnforced}]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+            BucketKeyEnabled: true
+      # Browsers upload inputs and play results through presigned URLs.
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: [!Ref PublicOrigin]
+            AllowedMethods: [PUT, GET]
+            AllowedHeaders: [content-type]
+            MaxAge: 600
+      # The one-minute sweep and the end of a generation delete everything on time; lifecycle
+      # rules work in whole days, so they are only the backstop if that ever stops.
+      LifecycleConfiguration:
+        Rules:
+          - Id: abort-incomplete-uploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+          - Id: abandoned-uploads
+            Status: Enabled
+            Prefix: u/
+            ExpirationInDays: 1
+          - Id: normalized-inputs
+            Status: Enabled
+            Prefix: n/
+            ExpirationInDays: 2
+          - Id: delivered-results
+            Status: Enabled
+            Prefix: r/
+            ExpirationInDays: 2
+
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TlsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource: [!GetAtt MediaBucket.Arn, !Sub '${MediaBucket.Arn}/*']
+            Condition: {Bool: {aws:SecureTransport: 'false'}}
+          # Likeness media is read and written only by the two functions, including through the
+          # presigned URLs they sign.
+          - Sid: OnlyWebFunctionsTouchMedia
+            Effect: Deny
+            Principal: '*'
+            Action: [s3:GetObject, s3:PutObject]
+            Resource: !Sub '${MediaBucket.Arn}/*'
+            Condition:
+              ArnNotEquals:
+                aws:PrincipalArn: [!GetAtt ApiFunctionRole.Arn, !GetAtt WorkerFunctionRole.Arn]
+
+  ApiLogs:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api
+      RetentionInDays: !Ref LogRetentionDays
+
+  WorkerLogs:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-worker
+      RetentionInDays: !Ref LogRetentionDays
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata: {BuildMethod: makefile}
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-api
+      # The public's request rate, and so its cost, is bounded by this concurrency and memory:
+      # pages poll every few seconds, and media never passes through the function.
+      ReservedConcurrentExecutions: 5
+      # Media, detection and model calls all run in the worker.
+      Timeout: 60
+      MemorySize: 512
+      EphemeralStorage: {Size: 512}
+      LoggingConfig: {LogGroup: !Ref ApiLogs, LogFormat: JSON}
+      Environment:
+        Variables:
+          GREMLIN_WEB_ROLE: api
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:ConditionCheckItem
+              Resource: !GetAtt StateTable.Arn
+            # Presigned URLs act with these permissions; HEAD of a missing key needs ListBucket.
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub '${MediaBucket.Arn}/*'
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt MediaBucket.Arn
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-worker
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/gremlin/${Environment}/web/*
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Metadata: {BuildMethod: makefile}
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-worker
+      # Each invocation advances the one active generation or runs the sweep.
+      ReservedConcurrentExecutions: 4
+      # Normalizing a phone clip (up to 100 MB, 4K), detecting subjects, one description call
+      # (at most 30 s) and copying the three results.
+      Timeout: 300
+      MemorySize: 3008
+      EphemeralStorage: {Size: 2048}
+      LoggingConfig: {LogGroup: !Ref WorkerLogs, LogFormat: JSON}
+      Environment:
+        Variables:
+          GREMLIN_WEB_ROLE: worker
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:ConditionCheckItem
+              Resource: !GetAtt StateTable.Arn
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub '${MediaBucket.Arn}/*'
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt MediaBucket.Arn
+            # The sweep fans out one invocation per due generation.
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-worker
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/gremlin/${Environment}/web/*
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+      Events:
+        Sweep:
+          Type: Schedule
+          Properties:
+            Name: !Sub ${AWS::StackName}-sweep
+            Schedule: rate(1 minute)
+            Description: Advances the active generation and deletes what has expired.
+            Input: '{"source": "aws.events"}'
+
+Outputs:
+  AlertsTopicArn:
+    Condition: HasAlerts
+    Value: !Ref Alerts
+  SiteUrl: {Value: !GetAtt ApiFunctionUrl.FunctionUrl}
+  ApiFunctionName: {Value: !Ref ApiFunction}
+  WorkerFunctionName: {Value: !Ref WorkerFunction}
+  TableName: {Value: !Ref StateTable}
+  MediaBucketName: {Value: !Ref MediaBucket}

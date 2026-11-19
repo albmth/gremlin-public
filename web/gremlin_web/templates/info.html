@@ -1,0 +1,46 @@
+{#- The header's info panel, beside the demo: what this is, how it works, what was hard and limits. -#}
+<aside class="info" id="info" aria-label="About" hidden data-info>
+  <div class="info-bar">
+    <button type="button" class="info-close" aria-label="Close" data-info-close>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>
+    </button>
+  </div>
+  <p class="info-intro">Gremlin puts the person or animal from a photo into a short clip and keeps the clip's motion, camera and scene. Upload a photo and a clip of at least 3 seconds (it uses 3 to 5 seconds of it), press Generate, wait a few minutes. It's a side project on a rented GPU, so there's a small allowance everyone shares.</p>
+
+  <div class="info-more">
+    <details>
+      <summary>How it works</summary>
+      <ul>
+        <li><b>Model.</b> <a href="https://github.com/zai-org/SCAIL-2" target="_blank" rel="noopener">SCAIL-2</a>, an open character animation model on Wan 2.1. Not mine. Everything around it is.</li>
+        <li><b>Prepare.</b> This site's own server fixes orientation, picks a 3 to 5 s window, finds the subjects with a small CPU detector, and asks you only when it isn't sure. The GPU side resamples to 16 fps, fits a 512 px canvas and rejects scene cuts.</li>
+        <li><b>Describe.</b> Gemini 2.5 Flash on Replicate writes the scene prompt from the photo and eight stills of the clip: who the character is, what they do, in order, and where. About USD 0.002 a video, cached for identical inputs.</li>
+        <li><b>Masks.</b> SAM segments the subject in the photo and tracks the chosen character through the clip. Masks under 0.2% or over 95% of the frame get thrown out.</li>
+        <li><b>Generate.</b> Pinned ComfyUI graphs on fp8 SCAIL-2 with the DPO and relight LoRAs. <i>complex-motion</i> is 12 UniPC steps at CFG 5; <i>simple-motion</i> adds the lightx2v distill LoRA for 8 steps at CFG 1. Both were picked by watching them side by side against the 40-step originals.</li>
+        <li><b>Run.</b> A Lambda API queues jobs. RunPod Serverless starts an RTX 5090 when there's work and goes back to zero after. Cost is reserved before the GPU starts, settled once it stops, and anything uncertain holds the queue until a human looks.</li>
+        <li><b>Finish.</b> Static overlays like a scoreboard clock get copied back from the original, then the video, a sticker and a still get encoded. The progress page shows real timings, not estimates.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>What was hard</summary>
+      <ul>
+        <li><b>Cold starts.</b> A fresh host has to pull the image and 31 GB of weights, which took 5 to 10 minutes. Most of those were self-inflicted: the controller patched the endpoint on every dispatch and RunPod answered by throwing away the warm worker. Leaving the endpoint alone brought the usual case down to about a minute and a half.</li>
+        <li><b>Money as state.</b> A GPU session is reserved at its hourly rate in the same transaction that admits it and settled exactly once from the provider's timings. Rolling-day and monthly caps default to zero.</li>
+        <li><b>Same bytes every time.</b> Pinned graphs, pinned weights hashed at boot, pinned encoder settings. The same input on the same GPU model gives the same file, so a quality change is a diff you can watch.</li>
+        <li><b>Overlays.</b> Diffusion mangles small static graphics like a match clock. Copying them back from the original works when the camera is still and breaks when something crosses the graphic; mask composites clipped limbs and were dropped.</li>
+        <li><b>The hosted detour.</b> One day was spent moving generation to hosted model APIs (an image edit, then image-to-video from the prompt). Fast and cheap, and it lost the clip's motion. Reverted the same evening.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Limits</summary>
+      <ul>
+        <li>Quality was reviewed on a few clips only. Other people, animals, scenes and camera moves are untested, and faces can drift in close-ups.</li>
+        <li>Each video's description is written by Gemini 2.5 Flash from the photo and eight stills. When that fails it falls back to a generic one, which keeps the motion noticeably worse.</li>
+        <li>Fast motion comes out smeared, like the source.</li>
+        <li>The public-figure check is the same model's judgement, not face recognition. It will miss some.</li>
+        <li>The first video after a quiet spell can take 5 to 10 minutes. One video runs at a time for the whole site.</li>
+        <li>Results are private previews, deleted when closed. If the connection is lost, automatic expiry cleans them up. Downloads and provider copies remain.</li>
+      </ul>
+    </details>
+    <a class="info-terms" href="/terms">Terms</a>
+  </div>
+</aside>

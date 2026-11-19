@@ -1,0 +1,6 @@
+# Preserve the upstream bytes and source hashes of imported model notices.
+worker/notices/models/CLIP-README.md whitespace=-blank-at-eol
+worker/notices/models/OpenCLIP-LICENSE.txt whitespace=-blank-at-eol
+worker/notices/models/SAM-README.md whitespace=-blank-at-eol
+worker/notices/models/SCAIL-original-README.md whitespace=-blank-at-eol
+worker/notices/models/UMT5-README.md whitespace=-blank-at-eol

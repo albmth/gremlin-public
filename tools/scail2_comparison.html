@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meimei + Enzo: SCAIL-2 comparison</title>
+<link rel="icon" href="data:,">
+<style>
+:root{color-scheme:dark;font:16px system-ui;background:#101318;color:#eef1f6}body{max-width:1500px;margin:auto;padding:24px}h1{font-size:26px;margin-bottom:8px}p{color:#bbc4d0;line-height:1.5}a{color:#a8caff}button,select{font:inherit;padding:9px 14px;border:1px solid #566173;border-radius:7px;background:#232b37;color:inherit;cursor:pointer}button:disabled{opacity:.5}nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:24px 0;position:sticky;top:0;background:#101318;padding:12px 0;z-index:1}input{flex:1;min-width:130px}.results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}figure{margin:0}h2{font-size:19px}video{width:100%;height:440px;object-fit:contain;background:#050608;border-radius:8px}.meta{font-size:14px;color:#a6b1c1;min-height:25px}.inputs{display:grid;grid-template-columns:220px minmax(250px,500px);gap:24px}.inputs img{width:100%;max-height:320px;object-fit:contain}.inputs video{height:320px}details{margin:28px 0}summary{cursor:pointer;font-size:19px}#status{font-size:14px;color:#d0d8e4}time{font-variant-numeric:tabular-nums}@media(max-width:800px){body{padding:14px}.results{grid-template-columns:1fr}video{height:340px}.inputs{grid-template-columns:1fr}.inputs img{max-width:240px}}
+</style>
+<h1>Meimei + Enzo: Gremlin, fal.ai, Replicate</h1>
+<p>The original Meimei PNG and first three seconds of Enzo. Gremlin and Replicate outputs are unchanged. fal rejected both standard subject settings during preprocessing and produced no MP4. No scoring.</p>
+<nav aria-label="Synchronized playback">
+<button id="play" disabled>Play all</button><button id="restart" disabled>Restart</button>
+<label for="position">Time</label><input id="position" type="range" min="0" max="3" step="0.001" value="0"><time id="time">0.00 / 3.00 s</time>
+<label>Speed <select id="speed"><option value="1">1x</option><option value="0.5">0.5x</option><option value="0.25">0.25x</option></select></label>
+</nav>
+<p id="status" role="status">Loading videos...</p>
+<div class="results">
+<figure><h2>Gremlin</h2><video id="gremlin" src="gremlin.mp4" muted playsinline preload="auto"></video><p class="meta" data-for="gremlin"></p><a href="gremlin.mp4">Open original MP4</a></figure>
+<!-- FAL_RESULT -->
+<figure><h2>Replicate</h2><video id="replicate" src="replicate.mp4" muted playsinline preload="auto"></video><p class="meta" data-for="replicate"></p><a href="replicate.mp4">Open original MP4</a></figure>
+</div>
+<details open><summary>Original inputs</summary><p>The source PNG is unedited. Driving video: 0-3 seconds at 16 fps, with its final frame held once to reach 49 frames. Playback stops at the common three-second interval.</p><div class="inputs"><figure><h2>Reference PNG</h2><img src="reference.png" alt="Original character reference"><a href="reference.png">Open PNG</a></figure><figure><h2>Enzo driving clip</h2><video id="driving" src="driving.mp4" muted playsinline preload="auto"></video><p class="meta" data-for="driving"></p><a href="driving.mp4">Open prepared interval</a> · <a href="source-driving.mp4">Original complete clip</a></figure></div></details>
+<p>Gremlin uses its existing owner-selected complex-motion output, including restoration. fal was configured for 40 steps, CFG 5, shift 3 and internal SAM3 preprocessing, but rejected the inputs before generation. Replicate uses its recommended fast preset, automatic BiRefNet masks and BF16 VAE. Canvas and duration differences are shown above.</p>
+<p><a href="notes.md">Experiment notes and costs</a> · <a href="inputs.json">Input provenance</a> · <a href="fal-parameters.json">fal parameters</a> · <a href="replicate-parameters.json">Replicate parameters</a></p>
+<script>
+const videos=[...document.querySelectorAll('video')],leader=videos[0];
+const play=document.querySelector('#play'),restart=document.querySelector('#restart'),position=document.querySelector('#position'),clock=document.querySelector('#time'),status=document.querySelector('#status');
+let running=false,limit=3;
+function pause(){running=false;videos.forEach(v=>v.pause());play.textContent='Play all';status.textContent='Paused.'}
+function seek(t){videos.forEach(v=>v.currentTime=Math.min(t,v.duration));position.value=t;clock.textContent=`${t.toFixed(2)} / ${limit.toFixed(2)} s`}
+async function start(){if(leader.currentTime>=limit-.02)seek(0);try{await Promise.all(videos.map(v=>v.play()));running=true;play.textContent='Pause all';status.textContent='Playing in sync, muted.'}catch(e){pause();status.textContent='Playback failed: '+e.message}}
+play.onclick=()=>running?pause():start();restart.onclick=()=>{pause();seek(0)};
+position.oninput=()=>{pause();seek(Number(position.value))};
+document.querySelector('#speed').onchange=e=>videos.forEach(v=>v.playbackRate=Number(e.target.value));
+Promise.all(videos.map(async v=>{if(location.protocol.startsWith('http')){const response=await fetch(v.getAttribute('src'));if(!response.ok)throw new Error(v.id+' could not load');v.src=URL.createObjectURL(await response.blob())}return new Promise((resolve,reject)=>{v.onloadedmetadata=()=>{document.querySelector(`[data-for="${v.id}"]`).textContent=`${v.videoWidth} × ${v.videoHeight} · ${v.duration.toFixed(3)} s`;resolve()};v.onerror=()=>reject(new Error(v.id+' could not load'));if(v.readyState>=1)v.onloadedmetadata()})})).then(()=>{limit=Math.min(3,...videos.map(v=>v.duration));position.max=limit;play.disabled=restart.disabled=false;seek(0);status.textContent='Ready. Play all controls the available results and the original clip.'}).catch(e=>status.textContent=e.message);
+function tick(){if(running){const t=leader.currentTime;if(t>=limit-.02||leader.ended){pause();seek(limit);status.textContent='Finished the common interval.'}else{videos.slice(1).forEach(v=>{if(Math.abs(v.currentTime-t)>.09)v.currentTime=t});position.value=t;clock.textContent=`${t.toFixed(2)} / ${limit.toFixed(2)} s`}}requestAnimationFrame(tick)}tick();
+</script>
+</html>

@@ -1,0 +1,28 @@
+[project]
+name = "gremlin"
+version = "0.3.0"
+description = "Independent Imprint generation service and worker"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "requests>=2.34.2", "av==19.0.1", "numpy>=2.2", "pillow>=12.0",
+]
+
+[dependency-groups]
+dev = [
+    "opencv-python-headless>=4.10",
+    "pytest>=9.1.1",
+    "ruff>=0.15.22",
+    "scipy>=1.14",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["control", "worker", "."]
+testpaths = ["worker/tests", "tests", "tools/hosted_eval/tests", "tools/motion_eval/tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+include = ["control/**/*.py", "contract/**/*.py", "examples/**/*.py", "worker/imprint_worker/**/*.py", "worker/tests/**/*.py", "tools/**/*.py", "tests/**/*.py", "web/gremlin_web/**/*.py", "web/devtools/**/*.py", "web/tests/**/*.py", "pyproject.toml"]
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "SIM", "UP"]

@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Imprint motion fidelity review</title>
+<style>
+body{font:15px system-ui;background:#10151c;color:#e6edf6;margin:0;padding:24px;max-width:1700px}
+h1,h2,h3{font-weight:650}button{font:inherit;border-radius:6px;padding:7px 12px;background:#253142;color:#fff;border:1px solid #53637a;cursor:pointer}
+.source{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}.source img,.source video{width:220px;height:220px;object-fit:contain;background:#000}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:18px}.card{background:#1a2330;border-radius:12px;padding:16px}
+.card video{width:100%;background:#000}.card .pair{display:flex;gap:8px}.card .pair video{width:50%}
+table{border-collapse:collapse;font-size:13px;margin:8px 0;width:100%}td,th{border-bottom:1px solid #2d3a4d;padding:4px 6px;text-align:left}th{color:#9db3cc;font-weight:500}
+.base{color:#c9d4e3;font-size:13px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:220px;overflow:auto;background:#0d1117;padding:8px;border-radius:6px}
+details summary{cursor:pointer;color:#9dd1ff}.toolbar{position:sticky;top:0;background:#10151cee;padding:10px 0;z-index:1}
+.gl{font-size:13px;color:#aab8c8}.svg{width:100%;height:70px;background:#0d1117;border-radius:6px}
+</style>
+<h1>Imprint motion fidelity review</h1>
+<p>Ground truth is the original driving interval (left pane of every comparison). The candidate must keep its movement, timing, camera and scene while the subject becomes the reference person. Measurements support the review; they do not decide it.</p>
+<main id="app"></main>
+<section><h2>Measurement glossary</h2><div id="glossary" class="gl"></div></section>
+<script>
+const DATA=__DATA__;
+const app=document.querySelector('#app');
+function fmt(v,d=2){return v===null||v===undefined?'n/a':(typeof v==='number'?v.toFixed(d):v);}
+function spark(a,b){const w=560,h=70,n=Math.max(a.length,b.length);const m=Math.max(...a,...b,1e-6);const pt=(s,i)=>`${(i/(n-1))*w},${h-(s/m)*(h-6)-3}`;const line=(s,c)=>`<polyline fill="none" stroke="${c}" stroke-width="1.6" points="${s.map(pt).join(' ')}"/>`;return `<svg class="svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${line(a,'#9dd1ff')}${line(b,'#ffb86b')}</svg><div class="gl">subject motion energy per frame: <span style="color:#9dd1ff">original</span> vs <span style="color:#ffb86b">candidate</span></div>`;}
+for(const f of DATA.fixtures){const s=document.createElement('section');s.innerHTML=`<h2>${f.name} <span class="base">(${f.seconds} s, ${f.frames} frames, ${f.subject} driver)</span></h2>
+<div class="source"><div><div class="gl">identity reference</div><img src="media/${f.id}/reference.png"></div><div><div class="gl">aligned still (FLUX.2 klein edit of frame 0)</div><img src="media/${f.id}/still.png"></div><div><div class="gl">original driving interval (ground truth)</div><video src="media/${f.id}/driver.mp4" controls loop muted playsinline></video></div><div><div class="gl">tracked subject mask</div><video src="media/${f.id}/mask.mp4" controls loop muted playsinline></video></div></div>
+<div class="toolbar"><button data-fx="${f.id}">Play all ${f.name} clips in sync</button></div><div class="cards"></div>`;app.append(s);
+for(const c of f.cards){const card=document.createElement('article');card.className='card';const fid=c.fidelity;const cost=c.cost||{};const lat=c.latency||{};
+card.innerHTML=`<h3>${c.title}</h3><div class="base">${c.baseline?'preserved baseline, no new inference':'campaign candidate'}</div>
+<div class="pair"><video src="${c.media}normalized.mp4" loop muted playsinline controls preload="metadata"></video><video src="${c.media}comparison.mp4" loop muted playsinline controls preload="metadata"></video></div>
+${spark(fid.per_frame.driver_energy,fid.per_frame.candidate_energy)}
+<table><tr><th>background PSNR</th><th>subject flow cosine</th><th>subject flow error</th><th>timing r</th><th>energy ratio</th><th>global flow cosine</th></tr>
+<tr><td>${fmt(fid.background_psnr_db,1)} dB (min ${fmt(fid.background_psnr_min_db,1)})</td><td>${fmt(fid.subject_flow_cosine)}</td><td>${fmt(fid.subject_flow_error)}</td><td>${fmt(fid.motion_timing_r)}</td><td>${fmt(fid.subject_energy_ratio)}</td><td>${fmt(fid.global_flow_cosine)}</td></tr></table>
+<table><tr><th>list USD</th><th>reserved USD</th><th>posted USD</th><th>queue s</th><th>inference s</th><th>total s</th></tr>
+<tr><td>${fmt(cost.list_usd,4)}</td><td>${fmt(cost.reserved_usd,4)}</td><td>${fmt(cost.posted_usd,4)}${cost.basis?' <span class="gl">('+cost.basis+')</span>':''}</td><td>${fmt(lat.queue_s,1)}</td><td>${fmt(lat.inference_s,1)}</td><td>${fmt(lat.total_s,1)}${lat.basis?' <span class="gl">('+lat.basis+')</span>':''}</td></tr></table>
+${c.request?`<details><summary>request</summary><pre>${JSON.stringify(c.request.input,null,1).replace(/</g,'&lt;')}</pre></details>`:''}`;
+s.querySelector('.cards').append(card);}
+s.querySelector('button').onclick=()=>{for(const v of s.querySelectorAll('video')){v.currentTime=0;v.play();}};}
+document.querySelector('#glossary').innerHTML=Object.entries(DATA.glossary).map(([k,v])=>`<p><b>${k}</b>: ${v}</p>`).join('');
+</script></html>

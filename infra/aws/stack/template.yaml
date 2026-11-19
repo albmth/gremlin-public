@@ -1,0 +1,440 @@
+AWSTemplateFormatVersion: '2010-09-09'
+# LanguageExtensions resolves the conditional deletion policies before SAM expands the functions.
+Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
+Description: >-
+  Gremlin Imprint control API (staging or prod). One Python package: an API function behind a public
+  Function URL (client bearer tokens and per-session worker tokens authenticate callers) and a
+  controller woken by a one-minute schedule, API doorbells and the RunPod completion webhook.
+  Durable state is one on-demand DynamoDB table; media is one private S3 bucket reached through
+  short-lived presigned URLs. No VPC, NAT, gateway, queue or provisioned capacity.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+
+Parameters:
+  ModerationEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  ModerationGuardrailId:
+    Type: String
+    Default: ''
+    AllowedPattern: '[a-z0-9]*'
+  ModerationGuardrailVersion:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[1-9][0-9]*$'
+  # Production keeps its table and bucket when the stack is deleted or a resource is replaced,
+  # and the table refuses deletion; staging is disposable.
+  Environment:
+    Type: String
+    AllowedValues: [staging, prod]
+  BuildCommit:
+    Type: String
+    AllowedPattern: '[0-9a-f]{40}'
+  ClientTokenHashes:
+    Type: String
+    Description: JSON object of client ID to SHA-256 token hash; hashes only, never tokens.
+    Default: '{}'
+  DelegatedClients:
+    Type: String
+    Description: JSON list of client IDs that serve many end users and must send X-Gremlin-Owner.
+    Default: '[]'
+  ImprintEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+  DailyJobs:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  # Spending authority defaults to none: no GPU session can be reserved until an operator
+  # sets the controller, the endpoint, the hourly rate and a budget.
+  ControllerEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  SweepEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Disable only for the initial empty-table import; enable before operating or admitting jobs.
+  EndpointId:
+    Type: String
+    Default: ''
+    AllowedPattern: '[A-Za-z0-9_-]{0,64}'
+  HourlyMicrousd:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  BudgetMicrousd:
+    Description: Optional cumulative trial stop-loss; zero leaves period budgets authoritative.
+    Type: Number
+    Default: 0
+    MinValue: 0
+  # Period limits complement, and never refill, the lifetime stop-loss ledger.
+  RollingBudgetMicrousd:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  MonthlyBudgetMicrousd:
+    Type: Number
+    Default: 0
+    MinValue: 0
+  GpuSelectionEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Automatic qualified GPU discovery; production requires true.
+  GpuQueueTimeoutSeconds:
+    Type: Number
+    Default: 660
+    MinValue: 60
+    MaxValue: 900
+  GpuQualificationEnabled:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: Explicit staging-only trial; never promotes GPU or image qualification.
+  GpuQualificationTarget:
+    Type: String
+    Default: ''
+    MaxLength: 120
+    Description: Optional exact catalog GPU ID for staging qualification; all compatibility and budget checks apply.
+  LogRetentionDays:
+    Type: Number
+    Default: 7
+  AlertEmail:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    Description: Production operator email; must confirm the SNS subscription before launch.
+
+Conditions:
+  Moderate: !Equals [!Ref ModerationEnabled, 'true']
+  HasEndpoint: !Not [!Equals [!Ref EndpointId, '']]
+  IsProd: !Equals [!Ref Environment, prod]
+  HasAlerts: !And [!Condition IsProd, !Not [!Equals [!Ref AlertEmail, '']]]
+  RunSweep: !Equals [!Ref SweepEnabled, 'true']
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Handler: gremlin_control.handler.handler
+    Architectures: [arm64]
+    CodeUri: ../../../control
+    MemorySize: 512
+    # The control plane's execution role may only create roles that carry this boundary.
+    PermissionsBoundary: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/gremlin-ctl-workload-boundary
+    Environment:
+      Variables:
+        GREMLIN_ENVIRONMENT: !Ref Environment
+        GREMLIN_BUILD_COMMIT: !Ref BuildCommit
+        GREMLIN_MODERATION_ENABLED: !Ref ModerationEnabled
+        GREMLIN_MODERATION_REGION: eu-west-1
+        GREMLIN_MODERATION_GUARDRAIL_ID: !Ref ModerationGuardrailId
+        GREMLIN_MODERATION_GUARDRAIL_VERSION: !Ref ModerationGuardrailVersion
+        GREMLIN_REGION: !Ref AWS::Region
+        GREMLIN_TABLE_NAME: !Ref StateTable
+        GREMLIN_MEDIA_BUCKET: !Ref MediaBucket
+        GREMLIN_CONTROLLER_FUNCTION: !Sub ${AWS::StackName}-controller
+        GREMLIN_MONITORING_ENABLED: !If [HasAlerts, 'true', 'false']
+        GREMLIN_CLIENT_TOKEN_HASHES: !Ref ClientTokenHashes
+        GREMLIN_DELEGATED_CLIENTS: !Ref DelegatedClients
+        GREMLIN_IMPRINT_ENABLED: !Ref ImprintEnabled
+        GREMLIN_IMPRINT_DAILY_JOBS: !Ref DailyJobs
+        GREMLIN_CONTROLLER_ENABLED: !Ref ControllerEnabled
+        GREMLIN_IMPRINT_ENDPOINT_ID: !Ref EndpointId
+        GREMLIN_IMPRINT_RUNPOD_KEY_PARAMETER: !If [HasEndpoint, !Sub '/gremlin/${Environment}/runpod-key', '']
+        GREMLIN_IMPRINT_HOURLY_MICROUSD: !Ref HourlyMicrousd
+        GREMLIN_IMPRINT_BUDGET_MICROUSD: !Ref BudgetMicrousd
+        GREMLIN_IMPRINT_ROLLING_BUDGET_MICROUSD: !Ref RollingBudgetMicrousd
+        GREMLIN_IMPRINT_MONTHLY_BUDGET_MICROUSD: !Ref MonthlyBudgetMicrousd
+        GREMLIN_IMPRINT_GPU_SELECTION_ENABLED: !Ref GpuSelectionEnabled
+        GREMLIN_IMPRINT_GPU_QUALIFICATION_ENABLED: !Ref GpuQualificationEnabled
+        GREMLIN_IMPRINT_GPU_QUALIFICATION_TARGET: !Ref GpuQualificationTarget
+        GREMLIN_IMPRINT_GPU_QUEUE_TIMEOUT_SECONDS: !Ref GpuQueueTimeoutSeconds
+
+Resources:
+  # Only fixed infrastructure names and aggregate health are sent to this topic, never
+  # personal data or secrets. Avoid a dedicated paid KMS key for these non-sensitive alerts.
+  Alerts:
+    Type: AWS::SNS::Topic
+    Condition: HasAlerts
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-alerts
+
+  AlertsPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Condition: HasAlerts
+    Properties:
+      Topics: [!Ref Alerts]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudwatch.amazonaws.com}
+            Action: sns:Publish
+            Resource: !Ref Alerts
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${AWS::StackName}-*
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlerts
+    Properties:
+      TopicArn: !Ref Alerts
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  ApiFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlerts
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-api-failures
+      AlarmDescription: API returned a 5xx response. Inspect the API logs and follow the AWS close procedure.
+      Namespace: AWS/Lambda
+      MetricName: Url5xxCount
+      Dimensions: [{Name: FunctionName, Value: !Ref ApiFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref Alerts]
+      OKActions: [!Ref Alerts]
+
+  # The sweep reports zero on failed reconciliation, holds, a queue older than 15 minutes,
+  # or exhausted spending authority. Missing samples detect crashes and a stopped schedule.
+  ControllerHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlerts
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-controller-health
+      AlarmDescription: Controller health failed or stopped reporting. Inspect state and logs; close spending before recovery.
+      Namespace: Gremlin/Operations
+      MetricName: Healthy
+      Dimensions: [{Name: Environment, Value: !Ref Environment}]
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref Alerts]
+      OKActions: [!Ref Alerts]
+
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
+    Properties:
+      TableName: !Sub ${AWS::StackName}-state
+      DeletionProtectionEnabled: !If [IsProd, true, false]
+      BillingMode: PAY_PER_REQUEST
+      # A hard ceiling on a runaway; a busy minute uses a few units.
+      OnDemandThroughput: {MaxReadRequestUnits: 100, MaxWriteRequestUnits: 100}
+      AttributeDefinitions:
+        - {AttributeName: pk, AttributeType: S}
+        - {AttributeName: sk, AttributeType: S}
+      KeySchema:
+        - {AttributeName: pk, KeyType: HASH}
+        - {AttributeName: sk, KeyType: RANGE}
+      TimeToLiveSpecification: {AttributeName: expire_at, Enabled: true}
+      # Protects the replay and accounting ledgers. Pruned personal records can survive in the
+      # recovery window for this many days (docs/privacy.md).
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+        RecoveryPeriodInDays: 7
+
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProd, Retain, Delete]
+    UpdateReplacePolicy: !If [IsProd, Retain, Delete]
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-media-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ObjectOwnership: BucketOwnerEnforced}]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+            BucketKeyEnabled: true
+      # Unversioned, so a delete removes the only copy. The application deletes media on its
+      # retention clocks; lifecycle rules are not the authority because holds can outlast them.
+      LifecycleConfiguration:
+        Rules:
+          - Id: abort-incomplete-uploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TlsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource: [!GetAtt MediaBucket.Arn, !Sub '${MediaBucket.Arn}/*']
+            Condition: {Bool: {aws:SecureTransport: 'false'}}
+          # Likeness media is read and written only by the two functions, including through the
+          # presigned URLs they sign. Every other identity in the account is denied even if a
+          # future policy would allow it.
+          - Sid: OnlyGremlinFunctionsTouchMedia
+            Effect: Deny
+            Principal: '*'
+            Action: [s3:GetObject, s3:PutObject]
+            Resource: !Sub '${MediaBucket.Arn}/*'
+            Condition:
+              ArnNotEquals:
+                aws:PrincipalArn: [!GetAtt ApiFunctionRole.Arn, !GetAtt ControllerFunctionRole.Arn]
+
+  ApiLogs:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api
+      RetentionInDays: !Ref LogRetentionDays
+
+  ControllerLogs:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-controller
+      RetentionInDays: !Ref LogRetentionDays
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+      com.aws.cloudformation.Context:
+        why: checks prompts and media before admission and publication inside the client timeout
+        must:
+          - Moderation IAM permits only the exact guardrail and Ireland image-label checks.
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-api
+      # Bound request-driven compute; reserved concurrency creates no idle capacity charge.
+      ReservedConcurrentExecutions: 2
+      # Requests carry JSON and diagnostics of at most 32 KiB; media never passes through.
+      Timeout: 30
+      # Lambda scales CPU with memory: the moderation children (decoder and boto3 imports)
+      # run about 1.3 s locally but the worker waited 12 s for /complete at 512 MB. One vCPU
+      # (1769 MB) shortens that wait at the same GB-seconds; billing is per invocation.
+      MemorySize: 1769
+      LoggingConfig: {LogGroup: !Ref ApiLogs, LogFormat: JSON}
+      Environment:
+        Variables:
+          GREMLIN_ROLE: api
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+      Policies:
+        - !If
+          - Moderate
+          - Statement:
+              - Effect: Allow
+                Action: bedrock:ApplyGuardrail
+                Resource: !Sub arn:${AWS::Partition}:bedrock:eu-west-1:${AWS::AccountId}:guardrail/${ModerationGuardrailId}
+              - Effect: Allow
+                Action: rekognition:DetectModerationLabels
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: eu-west-1
+          - !Ref AWS::NoValue
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:ConditionCheckItem
+              Resource: !GetAtt StateTable.Arn
+            # Presigned URLs act with these permissions; HEAD of a missing key needs ListBucket.
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject]
+              Resource: !Sub '${MediaBucket.Arn}/*'
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt MediaBucket.Arn
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-controller
+
+  ControllerFunction:
+    Type: AWS::Serverless::Function
+    Metadata: {BuildMethod: makefile}
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-controller
+      # One slow sweep can coexist with an operator read; the durable lock still serializes effects.
+      ReservedConcurrentExecutions: 2
+      # A pass yields 15 s before this deadline; provider calls time out after 20 s each.
+      Timeout: 120
+      LoggingConfig: {LogGroup: !Ref ControllerLogs, LogFormat: JSON}
+      Environment:
+        Variables:
+          GREMLIN_ROLE: controller
+          GREMLIN_PUBLIC_BASE_URL: !GetAtt ApiFunctionUrl.FunctionUrl
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:ConditionCheckItem
+              Resource: !GetAtt StateTable.Arn
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub '${MediaBucket.Arn}/*'
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt MediaBucket.Arn
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/gremlin/${Environment}/runpod-key
+            # SecureString decryption with the account's AWS-managed SSM key, for this parameter only.
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+                  kms:EncryptionContext:PARAMETER_ARN: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/gremlin/${Environment}/runpod-key
+      Events:
+        Sweep:
+          Type: Schedule
+          Properties:
+            Name: !Sub ${AWS::StackName}-sweep
+            Schedule: rate(1 minute)
+            Enabled: !If [RunSweep, true, false]
+            Description: Settles GPU sessions, fences expired leases and applies retention.
+            Input: '{"source": "aws.events"}'
+
+Outputs:
+  AlertsTopicArn:
+    Condition: HasAlerts
+    Value: !Ref Alerts
+  ApiUrl: {Value: !GetAtt ApiFunctionUrl.FunctionUrl}
+  ApiFunctionName: {Value: !Ref ApiFunction}
+  ControllerFunctionName: {Value: !Ref ControllerFunction}
+  TableName: {Value: !Ref StateTable}
+  MediaBucketName: {Value: !Ref MediaBucket}

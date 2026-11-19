@@ -1,0 +1,9 @@
+# ComfyUI requirements are resolved from the immutable revision in recipe.json.
+-r comfy-requirements.in
+torch==2.9.1+cu130
+torchvision==0.24.1+cu130
+# Model acquisition calls the Hub client directly.
+huggingface-hub==2.2.0
+hf-xet==1.7.0
+# The serverless job loop that hands queued work to the handler.
+runpod==1.12.0

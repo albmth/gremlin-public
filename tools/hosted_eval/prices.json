@@ -1,0 +1,11 @@
+{
+  "verified_on": "2026-10-29",
+  "models": {
+    "V1": {"provider":"replicate","endpoint":"wan-video/wan-2.2-5b-fast","reserve_usd":0.0125,"prices":{"480p":0.0125,"720p":0.025},"unit":"video","source":"https://replicate.com/wan-video/wan-2.2-5b-fast","quote":"or 80 videos for $1"},
+    "V2": {"provider":"replicate","endpoint":"prunaai/p-video","reserve_usd":0.025,"prices":{"720p_draft_second":0.005,"720p_second":0.02,"1080p_draft_second":0.01,"1080p_second":0.04},"unit":"output_second","source":"https://replicate.com/prunaai/p-video","quote":"Draft ON"},
+    "V3": {"provider":"replicate","endpoint":"wan-video/wan-2.2-i2v-fast","reserve_usd":0.05,"prices":{"480p":0.05,"720p":0.11,"480p_interpolated":0.065,"720p_interpolated":0.145},"unit":"video","source":"https://replicate.com/wan-video/wan-2.2-i2v-fast","quote":"$0.05"},
+    "V4": {"provider":"fal","endpoint":"fal-ai/wan/v2.2-a14b/image-to-video/turbo","prices":{"480p":0.05,"580p":0.075,"720p":0.10},"unit":"video","source":"https://fal.ai/models/fal-ai/wan/v2.2-a14b/image-to-video/turbo","quote":"$0.05"},
+    "E1": {"provider":"fal","endpoint":"fal-ai/flux-2/klein/4b/edit","reserve_usd":0.03,"usd_per_megapixel":0.01,"unit":"input_and_output_megapixel","source":"https://fal.ai/models/fal-ai/flux-2/klein/4b/edit","quote":"Your request will cost $0.01 per megapixel."},
+    "E2": {"provider":"fal","endpoint":"fal-ai/nano-banana/edit","reserve_usd":0.0398,"unit":"image","source":"https://fal.ai/models/fal-ai/nano-banana/edit","quote":"$0.0398"}
+  }
+}

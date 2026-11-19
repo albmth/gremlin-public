@@ -1,0 +1,553 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Gremlin control plane, deployed once by an account admin in eu-north-1. Creates the agent
+  identity gremlin-dev, the deployer role, the CloudFormation execution role, the workload
+  permissions boundary and the SAM artifact bucket. Workload stacks must be named
+  gremlin-staging-* or gremlin-prod-*. Control-plane names are gremlin-ctl-*; other projects'
+  control planes in the account are separate and grant nothing here.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+
+Parameters:
+  ModerationGuardrailId:
+    Type: String
+    AllowedPattern: '[a-z0-9]+'
+    Description: Guardrail ID from the separately deployed moderation stack in eu-west-1.
+
+Resources:
+  # The agent's identity. It has no access keys until the admin creates one, and its only
+  # permission is assuming the deployer role.
+  Developer:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: gremlin-dev
+      Tags: [{Key: project, Value: gremlin}]
+
+  DeveloperAssumeDeployer:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: gremlin-ctl-assume-deployer
+      Users: [!Ref Developer]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !GetAtt DeployerRole.Arn
+
+  DeployerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gremlin-ctl-deployer
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:user/gremlin-dev
+            Action: sts:AssumeRole
+      ManagedPolicyArns: [!Ref DeployerPolicy]
+      Tags: [{Key: project, Value: gremlin}]
+    DependsOn: Developer
+
+  # Deploys and inspects workload stacks. It can invoke the controller's operator actions but
+  # cannot read the table or any media object: likeness data stays with the workload roles.
+  DeployerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: gremlin-ctl-deployer
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyOutsideStockholm
+            Effect: Deny
+            NotAction: sts:*
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                aws:RequestedRegion: eu-north-1
+          - Sid: StackLifecycle
+            Effect: Allow
+            Action:
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:ListStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:GetTemplateSummary
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DeleteStack
+              - cloudformation:TagResource
+              - cloudformation:UntagResource
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:${AWS::AccountId}:stack/gremlin-staging-*/*
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:${AWS::AccountId}:stack/gremlin-prod-*/*
+          - Sid: CreateChangeSetOnlyWithExecRole
+            Effect: Allow
+            Action: cloudformation:CreateChangeSet
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:${AWS::AccountId}:stack/gremlin-staging-*/*
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:${AWS::AccountId}:stack/gremlin-prod-*/*
+            Condition:
+              StringEquals:
+                cloudformation:RoleArn: !GetAtt CfnExecRole.Arn
+          - Sid: Transforms
+            Effect: Allow
+            Action: cloudformation:CreateChangeSet
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:aws:transform/Serverless-2016-10-31
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:aws:transform/LanguageExtensions
+          - Sid: HandOnlyTheExecRoleToCloudFormation
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: !GetAtt CfnExecRole.Arn
+            Condition:
+              StringEquals:
+                iam:PassedToService: cloudformation.amazonaws.com
+          - Sid: ArtifactBucket
+            Effect: Allow
+            Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+            Resource: !Sub ${ArtifactBucket.Arn}/*
+          - Sid: ArtifactBucketList
+            Effect: Allow
+            Action: [s3:ListBucket, s3:GetBucketLocation]
+            Resource: !GetAtt ArtifactBucket.Arn
+          # Smoke checks, operator state and reviewed hold release go through the controller.
+          - Sid: InvokeAndInspectFunctions
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunction
+              - lambda:GetFunctionConfiguration
+              - lambda:GetFunctionUrlConfig
+            Resource:
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-prod-*
+          - Sid: LambdaAccountLimits
+            Effect: Allow
+            Action: lambda:GetAccountSettings
+            Resource: '*'
+          # Listing log groups only authorizes against '*'; it returns names, not events.
+          - Sid: ListLogGroups
+            Effect: Allow
+            Action: logs:DescribeLogGroups
+            Resource: '*'
+          - Sid: InspectLogs
+            Effect: Allow
+            Action: [logs:DescribeLogStreams, logs:FilterLogEvents, logs:GetLogEvents]
+            Resource:
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-staging-*:*
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-prod-*:*
+          - Sid: DescribeTables
+            Effect: Allow
+            Action: dynamodb:DescribeTable
+            Resource:
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-prod-*
+          # Operators may inspect and exercise notification delivery, but not rewrite alarms.
+          - Sid: InspectAndTestProductionAlarms
+            Effect: Allow
+            Action: [cloudwatch:DescribeAlarms, cloudwatch:SetAlarmState]
+            Resource: !Sub arn:${AWS::Partition}:cloudwatch:eu-north-1:${AWS::AccountId}:alarm:gremlin-prod-*
+          - Sid: InspectProductionNotifications
+            Effect: Allow
+            Action: [sns:GetTopicAttributes, sns:ListSubscriptionsByTopic]
+            Resource: !Sub arn:${AWS::Partition}:sns:eu-north-1:${AWS::AccountId}:gremlin-prod-*
+          # Teardown empties the media bucket; deleting cannot reveal content.
+          # Production media is never emptied by the agent.
+          - Sid: EmptyStagingMediaBucketsForTeardown
+            Effect: Allow
+            Action: [s3:ListBucket, s3:DeleteObject]
+            Resource:
+              - arn:aws:s3:::gremlin-staging-*-media-*
+              - arn:aws:s3:::gremlin-staging-*-media-*/*
+
+  CfnExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: gremlin-ctl-cfn-exec
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudformation.amazonaws.com}
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      ManagedPolicyArns: [!Ref CfnExecDataPolicy, !Ref CfnExecComputePolicy, !Ref CfnExecMonitoringPolicy]
+      Tags: [{Key: project, Value: gremlin}]
+
+  CfnExecDataPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: gremlin-ctl-cfn-exec-data
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # IAM is global and always reports us-east-1; its grants below are name-scoped.
+          - Sid: DenyOutsideStockholm
+            Effect: Deny
+            NotAction: [sts:*, iam:*]
+            Resource: '*'
+            Condition:
+              StringNotEquals:
+                aws:RequestedRegion: eu-north-1
+          # Bucket configuration only. A wildcard bucket ARN also matches object ARNs, so object
+          # data is denied outright: the execution role never reads or writes media.
+          - Sid: NoMediaData
+            Effect: Deny
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+            Resource:
+              - arn:aws:s3:::gremlin-staging-*/*
+              - arn:aws:s3:::gremlin-prod-*/*
+          # Production state and media outlive any stack operation; only an admin may delete them.
+          - Sid: KeepProductionData
+            Effect: Deny
+            Action: [dynamodb:DeleteTable, s3:DeleteBucket, s3:DeleteBucketPolicy]
+            Resource:
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-prod-*
+              - arn:aws:s3:::gremlin-prod-*
+          - Sid: Tables
+            Effect: Allow
+            Action:
+              - dynamodb:CreateTable
+              - dynamodb:DeleteTable
+              - dynamodb:DescribeTable
+              - dynamodb:UpdateTable
+              - dynamodb:DescribeContinuousBackups
+              - dynamodb:UpdateContinuousBackups
+              - dynamodb:DescribeTimeToLive
+              - dynamodb:UpdateTimeToLive
+              - dynamodb:ListTagsOfResource
+              - dynamodb:DescribeContributorInsights
+              - dynamodb:DescribeKinesisStreamingDestination
+              - dynamodb:GetResourcePolicy
+              - dynamodb:TagResource
+              - dynamodb:UntagResource
+            Resource:
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-prod-*
+          - Sid: MediaBuckets
+            Effect: Allow
+            Action:
+              - s3:CreateBucket
+              - s3:DeleteBucket
+              - s3:ListBucket
+              - s3:GetBucket*
+              - s3:PutBucket*
+              - s3:DeleteBucketPolicy
+              - s3:GetEncryptionConfiguration
+              - s3:PutEncryptionConfiguration
+              - s3:GetLifecycleConfiguration
+              - s3:PutLifecycleConfiguration
+              - s3:GetAccelerateConfiguration
+              - s3:GetAnalyticsConfiguration
+              - s3:GetIntelligentTieringConfiguration
+              - s3:GetInventoryConfiguration
+              - s3:GetMetricsConfiguration
+              - s3:GetReplicationConfiguration
+              - s3:ListTagsForResource
+              - s3:TagResource
+              - s3:UntagResource
+            Resource:
+              - arn:aws:s3:::gremlin-staging-*
+              - arn:aws:s3:::gremlin-prod-*
+          - Sid: LogGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:DeleteLogGroup
+              - logs:PutRetentionPolicy
+              - logs:DeleteRetentionPolicy
+              - logs:TagResource
+              - logs:UntagResource
+              - logs:ListTagsForResource
+              - logs:DescribeIndexPolicies
+              - logs:GetDataProtectionPolicy
+            Resource:
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-prod-*
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-staging-*:*
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-prod-*:*
+          - Sid: DescribeLogGroups
+            Effect: Allow
+            Action: [logs:DescribeLogGroups, logs:DescribeResourcePolicies]
+            Resource: '*'
+          - Sid: SweepSchedule
+            Effect: Allow
+            Action:
+              - events:PutRule
+              - events:DeleteRule
+              - events:DescribeRule
+              - events:ListTargetsByRule
+              - events:PutTargets
+              - events:RemoveTargets
+              - events:EnableRule
+              - events:DisableRule
+              - events:TagResource
+              - events:UntagResource
+              - events:ListTagsForResource
+            Resource:
+              - !Sub arn:${AWS::Partition}:events:eu-north-1:${AWS::AccountId}:rule/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:events:eu-north-1:${AWS::AccountId}:rule/gremlin-prod-*
+
+  # Separate policy keeps the data/compute policies below IAM's size limit; grants only
+  # production alarm and notification resources, with no new data-plane access.
+  CfnExecMonitoringPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: gremlin-ctl-cfn-exec-monitoring
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricAlarm
+              - cloudwatch:DeleteAlarms
+              - cloudwatch:DescribeAlarms
+              - cloudwatch:TagResource
+              - cloudwatch:UntagResource
+              - cloudwatch:ListTagsForResource
+            Resource: !Sub arn:${AWS::Partition}:cloudwatch:eu-north-1:${AWS::AccountId}:alarm:gremlin-prod-*
+          - Effect: Allow
+            Action:
+              - sns:CreateTopic
+              - sns:DeleteTopic
+              - sns:GetTopicAttributes
+              - sns:SetTopicAttributes
+              - sns:Subscribe
+              - sns:ListSubscriptionsByTopic
+              - sns:GetSubscriptionAttributes
+              - sns:SetSubscriptionAttributes
+              - sns:Unsubscribe
+              - sns:TagResource
+              - sns:UntagResource
+              - sns:ListTagsForResource
+            Resource: !Sub arn:${AWS::Partition}:sns:eu-north-1:${AWS::AccountId}:gremlin-prod-*
+
+  CfnExecComputePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: gremlin-ctl-cfn-exec-compute
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Functions
+            Effect: Allow
+            Action:
+              - lambda:CreateFunction
+              - lambda:DeleteFunction
+              - lambda:GetFunction
+              - lambda:GetFunctionConfiguration
+              # The resource handler reads these back after every create and update.
+              - lambda:GetFunctionCodeSigningConfig
+              - lambda:GetFunctionRecursionConfig
+              - lambda:GetRuntimeManagementConfig
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:GetFunctionConcurrency
+              - lambda:PutFunctionConcurrency
+              - lambda:DeleteFunctionConcurrency
+              - lambda:PublishVersion
+              - lambda:AddPermission
+              - lambda:RemovePermission
+              - lambda:GetPolicy
+              - lambda:CreateFunctionUrlConfig
+              - lambda:UpdateFunctionUrlConfig
+              - lambda:DeleteFunctionUrlConfig
+              - lambda:GetFunctionUrlConfig
+              - lambda:ListTags
+              - lambda:TagResource
+              - lambda:UntagResource
+            Resource:
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-prod-*
+          - Sid: CodeFromArtifactBucket
+            Effect: Allow
+            Action: s3:GetObject
+            Resource: !Sub ${ArtifactBucket.Arn}/*
+          # With --role-arn, CloudFormation expands the SAM transform as this role.
+          - Sid: Transforms
+            Effect: Allow
+            Action: cloudformation:CreateChangeSet
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:aws:transform/Serverless-2016-10-31
+              - !Sub arn:${AWS::Partition}:cloudformation:eu-north-1:aws:transform/LanguageExtensions
+          - Sid: WorkloadRolesOnlyWithBoundary
+            Effect: Allow
+            Action: iam:CreateRole
+            Resource:
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-prod-*
+            Condition:
+              StringEquals:
+                iam:PermissionsBoundary: !Ref WorkloadBoundary
+          - Sid: ManageWorkloadRoles
+            Effect: Allow
+            Action:
+              - iam:DeleteRole
+              - iam:GetRole
+              - iam:TagRole
+              - iam:UntagRole
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:GetRolePolicy
+              - iam:ListRolePolicies
+              - iam:ListAttachedRolePolicies
+            Resource:
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-prod-*
+          - Sid: OnlyLambdaBasicExecution
+            Effect: Allow
+            Action: [iam:AttachRolePolicy, iam:DetachRolePolicy]
+            Resource:
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-prod-*
+            Condition:
+              ArnEquals:
+                iam:PolicyARN: !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - Sid: PassWorkloadRolesToLambdaOnly
+            Effect: Allow
+            Action: iam:PassRole
+            Resource:
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/gremlin-prod-*
+            Condition:
+              StringEquals:
+                iam:PassedToService: lambda.amazonaws.com
+          - Sid: BoundaryIsImmutable
+            Effect: Deny
+            Action: [iam:PutRolePermissionsBoundary, iam:DeleteRolePermissionsBoundary]
+            Resource: '*'
+
+  # Ceiling for every role the execution role creates: Gremlin's workload data plane only.
+  WorkloadBoundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: gremlin-ctl-workload-boundary
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Logs
+            Effect: Allow
+            Action: [logs:CreateLogStream, logs:PutLogEvents]
+            Resource:
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-staging-*:*
+              - !Sub arn:${AWS::Partition}:logs:eu-north-1:${AWS::AccountId}:log-group:/aws/lambda/gremlin-prod-*:*
+          - Sid: Table
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+            Resource:
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:dynamodb:eu-north-1:${AWS::AccountId}:table/gremlin-prod-*
+          - Sid: Media
+            Effect: Allow
+            Action: [s3:GetObject, s3:PutObject, s3:DeleteObject, s3:ListBucket]
+            Resource:
+              - arn:aws:s3:::gremlin-staging-*-media-*
+              - arn:aws:s3:::gremlin-prod-*-media-*
+              - arn:aws:s3:::gremlin-staging-*-media-*/*
+              - arn:aws:s3:::gremlin-prod-*-media-*/*
+          - Sid: ProviderKey
+            Effect: Allow
+            Action: ssm:GetParameter
+            Resource:
+              - !Sub arn:${AWS::Partition}:ssm:eu-north-1:${AWS::AccountId}:parameter/gremlin/staging/*
+              - !Sub arn:${AWS::Partition}:ssm:eu-north-1:${AWS::AccountId}:parameter/gremlin/prod/*
+          - Sid: ProviderKeyDecryption
+            Effect: Allow
+            Action: kms:Decrypt
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:ViaService: ssm.eu-north-1.amazonaws.com
+          # Rekognition is unavailable in Stockholm. Only these synchronous checks use
+          # Ireland; no face indexing, model invocation, or moderation management is granted.
+          - Sid: ImageModeration
+            Effect: Allow
+            Action: rekognition:DetectModerationLabels
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws:RequestedRegion: eu-west-1
+          - Sid: PromptModeration
+            Effect: Allow
+            Action: bedrock:ApplyGuardrail
+            Resource: !Sub arn:${AWS::Partition}:bedrock:eu-west-1:${AWS::AccountId}:guardrail/${ModerationGuardrailId}
+          - Sid: Doorbell
+            Effect: Allow
+            Action: lambda:InvokeFunction
+            Resource:
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-staging-*
+              - !Sub arn:${AWS::Partition}:lambda:eu-north-1:${AWS::AccountId}:function:gremlin-prod-*
+          # The website's scene descriptions (infra/aws/web, CaptionModel): Amazon Nova Lite on
+          # demand in Stockholm only, without inference profiles or other Regions.
+          - Sid: WebCaption
+            Effect: Allow
+            Action: bedrock:InvokeModel
+            Resource: !Sub arn:${AWS::Partition}:bedrock:eu-north-1::foundation-model/amazon.nova-lite-v1:0
+          # The public website's optional public-figure screening of photos, in Ireland.
+          - Sid: WebPublicFigureScreening
+            Effect: Allow
+            Action: rekognition:RecognizeCelebrities
+            Resource: '*'
+            Condition:
+              StringEquals:
+                aws:RequestedRegion: eu-west-1
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub gremlin-ctl-artifacts-${AWS::AccountId}-eun1
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-build-artifacts
+            Status: Enabled
+            ExpirationInDays: 7
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+      Tags: [{Key: project, Value: gremlin}]
+
+  ArtifactBucketTls:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource: [!GetAtt ArtifactBucket.Arn, !Sub '${ArtifactBucket.Arn}/*']
+            Condition: {Bool: {aws:SecureTransport: 'false'}}
+
+Outputs:
+  DeveloperUser: {Value: !Ref Developer}
+  DeployerRoleArn: {Value: !GetAtt DeployerRole.Arn}
+  CfnExecRoleArn: {Value: !GetAtt CfnExecRole.Arn}
+  ArtifactBucket: {Value: !Ref ArtifactBucket}

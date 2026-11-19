@@ -1,0 +1,18 @@
+{
+  "idempotency_key": "kungfu-complex-motion-20261020",
+  "reference_sha256": "4c7ee30279b06ac0b01074a681908cdd46ff7b5db8b5d70e049e9b9c6a375928",
+  "driving_sha256": "5d7c8ab526ddf7e63a6f5479575aef8b36a3ea63c4280d546aea52abb073b4a8",
+  "reference_point": {
+    "x": 0.5,
+    "y": 0.7
+  },
+  "target_point": {
+    "x": 0.5,
+    "y": 0.6
+  },
+  "start_ms": 0,
+  "duration_ms": 3400,
+  "seed": 42,
+  "prompt": "A man with a brown mullet haircut, a swept fringe and longer hair falling over the back of his neck, light stubble and a short goatee, is fighting kung fu style on a wet city street at night. He has a normal-sized head and a lean build. He wears a faded blue denim jacket with a collar and chest pockets over a black crew-neck t-shirt. He raises both fists in a fighting guard, throws fast punches and swings his arms, lunges forward close to the camera, then steps back into his guard, moving naturally in front of a dark warehouse wall with yellow barriers, parked cars with glowing headlights and orange street lights reflecting on the wet pavement.",
+  "tier": "complex-motion"
+}

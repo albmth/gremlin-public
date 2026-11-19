@@ -1,0 +1,23 @@
+.DS_Store
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.cache/
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+artifacts/
+docs/feature_references/
+worker/models/
+.agent/inbox/
+infra/cloudflare/**/.wrangler/
+# Private evaluation media; see docs/fixtures.md.
+stickers/
+testmedia/
+
+# Built from the preserved example media, never committed.
+web/gremlin_web/static/showcase/

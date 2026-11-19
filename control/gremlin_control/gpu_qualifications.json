@@ -1,0 +1,323 @@
+{
+  "version": 3,
+  "minimum_cuda": "13.0",
+  "minimum_vram_gb": 32,
+  "minimum_disk_gb": 50,
+  "compute_capabilities": [
+    "12.0"
+  ],
+  "engine_args": "--fast-disk",
+  "placement_regions": [
+    "EUROPE"
+  ],
+  "images": {
+    "ghcr.io/albmth/gremlin-imprint@sha256:ea936756b6359889e1d133209478cadc99706693388728c43d47436ec70ca05e": {
+      "status": "accepted",
+      "transport_version": 1,
+      "supports_gpu_constraints": false,
+      "evidence": "Serverless MVP, Run G and owner acceptance, 20 October 2026"
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:0d6604c7d0cf673f70ead7885c45f5401d8a6d8e5e3a9889dff9b3a6f48d6a49": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": false,
+      "evidence": "Phase 5 PRO 4500 genuine complex-motion and simple-motion outputs accepted by the owner on 23 October 2026; runtime guard still absent"
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:eb577d3eac6e14cf29d903b5b87108e85ec4824cfb24d67056e747cd1fcce696": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "evidence": "automatic PRO 4500 guarded run reproduced both owner-accepted outputs byte for byte on 23 October 2026; RTX 5090 remains a trial after its pre-lease rejection."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:772cdca29a553cad257835c21efea9479770bde6d7163ccd1d02c0274eb60ba6": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "evidence": "portable cgroup guard built from dbdd7ee passed genuine paired qualification on both RTX 5090 and RTX PRO 4500 on 23 October 2026. Both tiers match accepted decoded frames, timing and presentation; all PRO 4500 artifacts are byte-identical. RTX 5090 Kung Fu MP4 container bytes differ, with identical decoded frames, WebP and poster."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:2d1a3a8164eca55456ab585e85ddfe516184783937eae8040eb0533600a3302e": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "runtime-hf",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": null,
+            "revision": null
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [],
+          "trial_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ]
+        },
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ],
+          "trial_gpu_ids": []
+        }
+      ],
+      "evidence": "exact private release passed native-cache Enzo/simple-motion and Kung Fu/complex-motion in one cold session on each exact GPU. All 270 decoded frames, timing and presentation match accepted controls; 11 of 12 media files are byte-identical, with the historical RTX 5090 Kung Fu MP4-only byte difference. Immutable release/full hashes, zero runtime download/copy, runtime guards, owned delivery and shutdown passed. Stable 09:38 UTC hour/day provider reads report USD 0.20523622573819011 GPU plus disk for four deliveries, USD 0.05130905643454753 each, 19.9-24.5 percent below historical measured costs. This qualifies only the bounded native mixed-workload campaign for a later production decision; no per-GPU bill attribution or population reliability claim. Billing has no finality marker and may adjust. Runtime-hf remains an independent unqualified trial."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:cb8e8fcde45c7b41479b15af9e4bc0890412fb2d4f68c15b53d61d0b4e17ce20": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ],
+          "trial_gpu_ids": []
+        }
+      ],
+      "evidence": "built from ad53c9c with parallel boot hashing, an engine start that overlaps verification and the owner-approved 12-step complex-motion tier. Hosted native-cache qualification on 26 October 2026 (retry): RTX 5090 session delivered Enzo byte-identical to its accepted control and Kung Fu with all 55 decoded frames, WebP and poster identical to the owner-approved c12 control (MP4 container bytes differ as historically); engine ready 12.159 s. RTX PRO 4500 session delivered Enzo byte-identical to its accepted control and the first 12-step Kung Fu on this GPU, which the owner reviewed and accepted on 27 October 2026 as that GPU's 12-step control; engine ready 17.1 s. The RTX 5090 is the preferred production GPU (faster and cheaper per job); the PRO 4500 is a qualified fallback."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:1fda19751f65990bd7258e31977a6aaa694dbb282f86a24f5fd3559a9a9ecaf8": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ],
+          "trial_gpu_ids": []
+        }
+      ],
+      "evidence": "built from bcc3c1e on the unchanged cb8e8fcd engine layers; the worker reports GPU-side input checks as typed input rejections and keeps serving the queue. Hosted staging qualification on 27 October 2026: RTX 5090 session e91022c0-362a-412d-a324-bd6f5ff3b94a and RTX PRO 4500 session c9a0fefd-bcc8-450e-91b3-373301b170e7 each ran Enzo simple-motion, a deliberately untrackable clip and Kung Fu complex-motion in one session; the untrackable clip alone failed with input_rejected/target_not_tracked and the same worker served the next job, and both sessions settled without a hold. RTX 5090 Enzo is byte-identical to g-enzo-simple and Kung Fu matches the c12 control on all 55 decoded frames, WebP and poster (MP4 container bytes differ as historically); PRO 4500 Enzo and Kung Fu are byte-identical to that GPU's accepted controls. No delivered frame changed, so no owner video review was needed."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:35d999a7504ba29bdeaa96dfb2f57199aeb97cb36783c5751edfee09c97008ff": {
+      "status": "trial",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [],
+          "trial_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ]
+        }
+      ],
+      "evidence": "candidate A, the 1fda1975 engine rebuilt with its pinned wheels in five parallel-pullable layers and a shallow ComfyUI clone (tag layers-20261030, OCI index 72fae6cb); every installed file, the ComfyUI tree, the worker files, ffmpeg and the shared libraries are byte-identical to 1fda1975. Trial for the fresh-host pull-time measurement on staging; not accepted."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:8767e27e1416a4b4a18efa15fd0f81422e1a6ca6d2b4a7833ce11ffb7a319b66": {
+      "status": "trial",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [],
+          "trial_gpu_ids": [
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ]
+        }
+      ],
+      "evidence": "candidate B, the 1fda1975 engine rebuilt on runpod/pytorch:1.0.7-cu1300-torch291-ubuntu2404 (tag runpodbase-20261030), whose torch, triton and NVIDIA wheels are the pinned ones; every runtime package file, the ComfyUI tree and the worker files are byte-identical to 1fda1975, and Ubuntu ffmpeg 6.1.1 reproduces the decoded frames of the accepted encode. Trial for the fresh-host pull-time measurement on staging; not accepted."
+    },
+    "ghcr.io/albmth/gremlin-imprint@sha256:c584f96da727b7a8dbf5d8f3a779d79031e8b74420f5b22eed3001902af380be": {
+      "status": "accepted",
+      "transport_version": 2,
+      "supports_gpu_constraints": true,
+      "supports_model_release": true,
+      "releases": [
+        {
+          "weight_source": "native-cache",
+          "model_release": {
+            "version": 1,
+            "asset_set_sha256": "cfc7db0949b154d09429f1259fd5a5a6312ae221626d8853919fdf63a7636d11",
+            "repo": "abxnah/gremlin-models-20261026-cfc7db0949b1",
+            "revision": "df85a273ddc4e7e911bf7c7a7692a51424e5fa71"
+          },
+          "engine_args": "--fast-disk",
+          "accepted_gpu_ids": [
+            "NVIDIA GeForce RTX 5090"
+          ],
+          "trial_gpu_ids": [
+            "NVIDIA RTX PRO 4500 Blackwell"
+          ]
+        }
+      ],
+      "evidence": "candidate C, the worker tree of 40c9e26 (tag restore-20261030, OCI index d5dd5472) on candidate A's parallel-pullable layers, with restoration components labelled by scipy instead of PIL floodfill (identical sets, verified pixel for pixel on both fixtures locally), up to 32 restoration threads and one GPU probe per container. Hosted qualification on 30 October 2026: RTX 5090 session a9cba8e8-7347-4aff-87c6-ba0abde528c4 delivered Enzo byte-identical to g-enzo-simple and Kung Fu identical to the c12 control on all 55 decoded frames, WebP and poster (MP4 container bytes differ as historically); no delivered frame changed, so no owner video review was needed. The RTX PRO 4500 pairing could not run: its placement timed out at 660 s with three throttled candidates (and twice on 29 October with none listed), so that GPU stays a trial on this image."
+    }
+  },
+  "storage": {
+    "network": {
+      "models_root": "/runpod-volume/models",
+      "models_stage": "/opt/ComfyUI/models",
+      "cold_start_seconds": 86,
+      "evidence": "Run F, 84.5 seconds; rounded up with startup margin"
+    },
+    "local": {
+      "models_root": "/opt/ComfyUI/models",
+      "models_stage": "",
+      "cold_start_seconds": 226,
+      "evidence": "Run A, 225.9 seconds including weight download"
+    },
+    "native-cache": {
+      "models_root": "",
+      "models_stage": "",
+      "cold_start_seconds": 37,
+      "evidence": "measured worker-start-to-engine-ready maximum 36.422 seconds, rounded up to 37, from one cold native-cache session on each exact GPU. Includes full hashing; excludes provider preparation/queue and first-use inference. Not a p95 or production reliability measurement. The exact native release passed bounded campaign economics on posted GPU/disk charges; no production reliability claim."
+    }
+  },
+  "costs": {
+    "checked_at": "2026-10-23",
+    "container_disk_microusd_per_gb_month": 100000,
+    "standard_volume_microusd_per_gb_month": 70000,
+    "transfer_allowance_microusd_per_job": 5000,
+    "evidence": "RunPod storage prices checked 23 October 2026; 5000 micro-USD allowance for AWS media requests and transfer, not a provider quote"
+  },
+  "gpus": [
+    {
+      "id": "NVIDIA GeForce RTX 5090",
+      "status": "accepted",
+      "compute_capability": "12.0",
+      "accepted_images": [
+        "ghcr.io/albmth/gremlin-imprint@sha256:ea936756b6359889e1d133209478cadc99706693388728c43d47436ec70ca05e",
+        "ghcr.io/albmth/gremlin-imprint@sha256:772cdca29a553cad257835c21efea9479770bde6d7163ccd1d02c0274eb60ba6",
+        "ghcr.io/albmth/gremlin-imprint@sha256:cb8e8fcde45c7b41479b15af9e4bc0890412fb2d4f68c15b53d61d0b4e17ce20",
+        "ghcr.io/albmth/gremlin-imprint@sha256:1fda19751f65990bd7258e31977a6aaa694dbb282f86a24f5fd3559a9a9ecaf8",
+        "ghcr.io/albmth/gremlin-imprint@sha256:c584f96da727b7a8dbf5d8f3a779d79031e8b74420f5b22eed3001902af380be"
+      ],
+      "trial_images": [
+        "ghcr.io/albmth/gremlin-imprint@sha256:0d6604c7d0cf673f70ead7885c45f5401d8a6d8e5e3a9889dff9b3a6f48d6a49",
+        "ghcr.io/albmth/gremlin-imprint@sha256:eb577d3eac6e14cf29d903b5b87108e85ec4824cfb24d67056e747cd1fcce696"
+      ],
+      "runtime_gpu_names": [
+        "NVIDIA GeForce RTX 5090"
+      ],
+      "minimum_host_memory_gib": 57.7412109375,
+      "host_memory_evidence": "Accepted pod cgroup limit rounded to 59128 MiB in artifacts/candidates/pod-logs/comfy.log; lower rounded MiB edge retained. Portable image also completed both tiers on a cgroup v1 worker with 92999999488 bytes of effective container memory.",
+      "tier_seconds": {
+        "complex-motion": 195,
+        "simple-motion": 77
+      },
+      "measured": true,
+      "evidence": "conservative performance from Runs B2 and G1 retained. Portable image 772cdca passed both strict accepted-output comparisons in a provider job on 23 October 2026; all decoded frames, timing, WebP and poster match, with only Kung Fu MP4 container bytes different.",
+      "cold_start_seconds": {
+        "local": 88.6,
+        "native-cache": 30
+      },
+      "workload_measurements": {
+        "complex-motion": {
+          "model_frames": 57,
+          "fixed_seconds": 11.9395,
+          "generation_seconds": 58.476999
+        },
+        "simple-motion": {
+          "model_frames": 81,
+          "fixed_seconds": 17.8865,
+          "generation_seconds": 34.24195
+        }
+      },
+      "runtime_estimate_evidence": "26 October 12-step complex-motion measurement (generation 58.477 s, total 70.416 s) on image cb8e8fcd; simple-motion unchanged from the 23 October portable-image measurement. Queue estimates scale generation by padded frames and canvas, retain fixed overhead, and add 10% margin. Reservations remain 3060 seconds at the highest eligible rate.",
+      "cold_start_evidence": "23 October portable-image cold local boot, including pinned weight acquisition; not a p95 or bundled-image measurement. one cold native-cache session on 26 October measured worker-start-to-engine-ready at 29.068 seconds, rounded up to 30. Includes full hashing; excludes provider preparation/queue and first-use inference. Not a p95; the bounded native campaign passed on aggregate posted charges, without separate per-GPU billing attribution."
+    },
+    {
+      "id": "NVIDIA RTX PRO 4500 Blackwell",
+      "status": "accepted",
+      "compute_capability": "12.0",
+      "accepted_images": [
+        "ghcr.io/albmth/gremlin-imprint@sha256:0d6604c7d0cf673f70ead7885c45f5401d8a6d8e5e3a9889dff9b3a6f48d6a49",
+        "ghcr.io/albmth/gremlin-imprint@sha256:eb577d3eac6e14cf29d903b5b87108e85ec4824cfb24d67056e747cd1fcce696",
+        "ghcr.io/albmth/gremlin-imprint@sha256:772cdca29a553cad257835c21efea9479770bde6d7163ccd1d02c0274eb60ba6",
+        "ghcr.io/albmth/gremlin-imprint@sha256:cb8e8fcde45c7b41479b15af9e4bc0890412fb2d4f68c15b53d61d0b4e17ce20",
+        "ghcr.io/albmth/gremlin-imprint@sha256:1fda19751f65990bd7258e31977a6aaa694dbb282f86a24f5fd3559a9a9ecaf8"
+      ],
+      "trial_images": [],
+      "runtime_gpu_names": [
+        "NVIDIA RTX PRO 4500 Blackwell"
+      ],
+      "minimum_host_memory_gib": 57.7412109375,
+      "host_memory_evidence": "Guarded and portable PRO 4500 trials measured 61999996928 bytes of cgroup v2 memory and completed both tiers; retains the existing accepted 5090 lower limit of 59127 MiB.",
+      "tier_seconds": {
+        "complex-motion": 300,
+        "simple-motion": 85
+      },
+      "measured_tier_seconds": {
+        "complex-motion": 186,
+        "simple-motion": 85
+      },
+      "measured_duration_ms": {
+        "complex-motion": 3400,
+        "simple-motion": 5000
+      },
+      "runtime_estimate_evidence": "26 October 12-step complex-motion measurement (generation 104.869 s, total 119.792 s) on image cb8e8fcd, output accepted by the owner on 27 October 2026; simple-motion unchanged from the 23 October portable-image measurement. Queue estimates scale generation by padded frames and canvas, retain fixed overhead, and add 10% margin. Reservations remain 3060 seconds at the highest eligible rate.",
+      "measured": true,
+      "evidence": "both tiers accepted by the owner on 23 October 2026, then byte-identically reproduced on guarded image eb577d3 and portable image 772cdca. Portable provider job completed Kung Fu in 185.6549266 seconds and Enzo in 84.0197078 seconds. Worst measured times rounded up remain 186 seconds for the 3.4-second complex fixture and 85 seconds for the 5-second simple fixture.",
+      "cold_start_seconds": {
+        "local": 69.5,
+        "native-cache": 37
+      },
+      "workload_measurements": {
+        "complex-motion": {
+          "model_frames": 57,
+          "fixed_seconds": 14.9227,
+          "generation_seconds": 104.869152
+        },
+        "simple-motion": {
+          "model_frames": 81,
+          "fixed_seconds": 23.0684,
+          "generation_seconds": 60.9513
+        }
+      },
+      "cold_start_evidence": "23 October portable-image cold local boot, including pinned weight acquisition; not a p95 or bundled-image measurement. one cold native-cache session on 26 October measured worker-start-to-engine-ready at 36.422 seconds, rounded up to 37. Includes full hashing; excludes provider preparation/queue and first-use inference. Not a p95; the bounded native campaign passed on aggregate posted charges, without separate per-GPU billing attribution."
+    }
+  ]
+}

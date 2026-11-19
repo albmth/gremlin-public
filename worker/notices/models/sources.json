@@ -1,0 +1,52 @@
+[
+  {
+    "file": "SCAIL-repack-README.md",
+    "url": "https://huggingface.co/Comfy-Org/SCAIL-2/raw/fe3c728bc793ba21ca674688f822afb709ad44fb/README.md",
+    "sha256": "dceddc5ef04e6a5319902f1a425e43a888b455e0f2695a7dd280671e1e24857c"
+  },
+  {
+    "file": "SCAIL-original-README.md",
+    "url": "https://huggingface.co/zai-org/SCAIL-2/raw/150cc0ca4e98e50e60b9295dacde39442fdccab2/README.md",
+    "sha256": "cade35f0cf5dfec66510b9ec0e99eaf5bb4424fcdeeeb344d937516756cae1d3"
+  },
+  {
+    "file": "Wan-repack-README.md",
+    "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/raw/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/README.md",
+    "sha256": "99af646bb048f76ff4932ecb7647ebc2ba299a781d3478d8a9fdb4190cf3cc62"
+  },
+  {
+    "file": "SAM-README.md",
+    "url": "https://huggingface.co/Comfy-Org/sam3.1/raw/7bb8374780a725b4353ed31f3a9395c9742b5621/README.md",
+    "sha256": "13fbf66a29b48172ce0499173745d208a1ad580021529bb880ad0938caf1cf71"
+  },
+  {
+    "file": "SAM-LICENSE.txt",
+    "url": "https://huggingface.co/Comfy-Org/sam3.1/raw/7bb8374780a725b4353ed31f3a9395c9742b5621/LICENSE",
+    "sha256": "bec48f70bd37bf8280a9d1ebf01642d26086f6122ba735baa08fe03c5a6e7448"
+  },
+  {
+    "file": "Lightx2v-README.md",
+    "url": "https://huggingface.co/lightx2v/Wan2.1-Distill-Loras/raw/27ae38da91014b947dd39cc3fa78b97cd7b386dd/README.md",
+    "sha256": "8139cda9b65778d20f454759011a2c5db25e337ff19450cf62c5f596e8ab5c07"
+  },
+  {
+    "file": "UMT5-README.md",
+    "url": "https://huggingface.co/google/umt5-xxl/raw/66cb9e7e85526fe440a945569e42c72fb6cbc0ad/README.md",
+    "sha256": "5a3d9571271acaf4e83b1a7acdd1e7e1c11dfcfb8e5ff5c28e27c804d4c62429"
+  },
+  {
+    "file": "CLIP-README.md",
+    "url": "https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/raw/1c2b8495b28150b8a4922ee1c8edee224c284c0c/README.md",
+    "sha256": "14db420f00ddf78a07194dc4cdc57977d979e0f2c34994137679046defdf6577"
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "url": "https://raw.githubusercontent.com/Wan-Video/Wan2.1/9737cba9c1c3c4d04b33fcad41c111989865d315/LICENSE.txt",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  {
+    "file": "OpenCLIP-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/mlfoundations/open_clip/2bcb5adf5090df595a78b56ca9aee7b1c70efc18/LICENSE",
+    "sha256": "4a5b4f13ea4792a8211a69f32d2b460b6d520e57cd23c6301e707c76a6e97a55"
+  }
+]

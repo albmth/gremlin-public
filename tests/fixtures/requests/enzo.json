@@ -1,0 +1,18 @@
+{
+  "idempotency_key": "enzo-simple-motion-20261020",
+  "reference_sha256": "4c7ee30279b06ac0b01074a681908cdd46ff7b5db8b5d70e049e9b9c6a375928",
+  "driving_sha256": "fa6bb5341bd829c2226cff9a3528b45fd68e5078b1ccb506be2aa199104665cf",
+  "reference_point": {
+    "x": 0.5,
+    "y": 0.7
+  },
+  "target_point": {
+    "x": 0.42,
+    "y": 0.68
+  },
+  "start_ms": 0,
+  "duration_ms": 5000,
+  "seed": 42,
+  "prompt": "A man with a brown mullet haircut, a swept fringe and longer hair falling over the back of his neck, light stubble and a short goatee, is celebrating a goal in a packed football stadium at night. He has a normal-sized head and a lean build. He wears a faded blue denim jacket with a collar and chest pockets over a black crew-neck t-shirt. He salutes with his right hand at his forehead and purses his lips, then cups both hands behind his ears and tilts his head back toward the crowd, moving naturally in front of the floodlit green pitch, blue advertising boards, crowded stands and teammates in dark blue shirts walking behind him.",
+  "tier": "simple-motion"
+}

@@ -1,0 +1,10 @@
+.git
+.venv
+.cache
+artifacts
+worker/models
+.env
+.env.*
+stickers
+docs/history
+__pycache__

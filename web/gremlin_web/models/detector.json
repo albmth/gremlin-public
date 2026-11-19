@@ -1,0 +1,11 @@
+{
+  "name": "yolox-nano-416",
+  "file": "yolox_nano.onnx",
+  "url": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_nano.onnx",
+  "sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "bytes": 3659407,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX (release 0.1.1rc0, the official ONNX export)",
+  "license": "Apache-2.0, https://github.com/Megvii-BaseDetection/YOLOX/blob/main/LICENSE",
+  "input": "1x3x416x416 BGR, 0-255, letterboxed top-left on value 114, no normalization",
+  "output": "1x3549x85: per anchor of strides 8/16/32, box offsets, objectness and 80 COCO class scores"
+}

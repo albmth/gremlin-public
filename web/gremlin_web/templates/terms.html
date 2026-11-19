@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block page %}terms{% endblock %}
+{% block main %}
+<article class="narrow prose">
+  <div class="page-head">
+    <a href="/" class="back small muted">← Back</a>
+    <h1>Terms</h1>
+    <p>Gremlin is an independent side project exploring a cheaper way to make AI videos than expensive generation services. This demo is free, with a limited allowance shared by everyone.</p>
+  </div>
+
+  <h2>Use media you have permission to use</h2>
+  <p>Only upload photos and clips you have the right to use. Get the agreement of anyone you put in a video; no public figures or anyone under 18. No sexual, violent, hateful, harassing, defamatory or illegal content. Don't mislead people or pass a result off as a real event. Keep its AI-generated label. By generating, you agree to these rules.</p>
+
+  <h2>Results are private and temporary</h2>
+  <p>Your finished video is only available to your browser in a private preview. Closing the preview deletes this site’s copy. If a lost connection or browser crash prevents that request, it expires {{ retention_hours }} hours after completion and a cleanup job deletes it within the next minute. This does not erase copies you downloaded or copies still held by processing providers.</p>
+  <p>A browser cookie lets you follow and delete your own videos. Uploads are processed using AWS and RunPod. To write each video's description, your photo and eight stills from your clip are sent to Replicate, which runs Google's Gemini 2.5 Flash model; Replicate and Google handle them under their own terms. Job records, including descriptions, can remain for 30 days; this site's server logs are kept for 7 days.</p>
+  <p>The same model call also checks whether the photo or clip seems to show a public figure or footage of a public event, and those videos are stopped. It's an automated guess and will miss some, so the rules above still apply.</p>
+
+  <h2>It's an experiment</h2>
+  <p>Results and availability aren't guaranteed. The service is offered as is, and requests may be refused or the demo paused. You're responsible for what you upload and how you use the results.</p>
+</article>
+{% endblock %}

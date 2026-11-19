@@ -1,0 +1,69 @@
+[
+  {
+    "name": "Enzo Fernandez Argentina GIF - Enzo fernandez Enzo Argentina - Discover & Share GIFs-(498p).mp4",
+    "sha256": "fa6bb5341bd829c2226cff9a3528b45fd68e5078b1ccb506be2aa199104665cf",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 498,
+          "height": 498,
+          "r_frame_rate": "30/1",
+          "nb_frames": "216"
+        },
+        {
+          "codec_name": "png",
+          "width": 498,
+          "height": 498,
+          "r_frame_rate": "90000/1"
+        }
+      ],
+      "format": {
+        "duration": "7.200000",
+        "size": "1194539"
+      }
+    }
+  },
+  {
+    "name": "Screenshot 2026-10-19 at 5.46.12 PM.png",
+    "sha256": "4c7ee30279b06ac0b01074a681908cdd46ff7b5db8b5d70e049e9b9c6a375928",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "png",
+          "width": 414,
+          "height": 518,
+          "r_frame_rate": "25/1"
+        }
+      ],
+      "format": {
+        "size": "370926"
+      }
+    }
+  },
+  {
+    "name": "Kung Fu Fighting GIF.gif",
+    "sha256": "5d7c8ab526ddf7e63a6f5479575aef8b36a3ea63c4280d546aea52abb073b4a8",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "gif",
+          "width": 480,
+          "height": 476,
+          "r_frame_rate": "15/1",
+          "nb_frames": "51"
+        }
+      ],
+      "format": {
+        "duration": "3.400000",
+        "size": "4608722"
+      }
+    }
+  }
+]

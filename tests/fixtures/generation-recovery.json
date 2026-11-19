@@ -1,0 +1,17 @@
+{
+  "label_basis": "Visual review of the supplied photo and driving first, intermediate and final frames on 3 November 2026. Regions identify the intended subject interior, not detector boxes. Durations come from decoded timestamps and final frame durations.",
+  "reference": {
+    "path": "testmedia/meimei.jpeg",
+    "sha256": "644bacbee59e2eecbf30fadf340ae1da0ca8d00b607dc55fd9d18ae743e85181",
+    "subject": "The single snow leopard character, including its raised paw",
+    "interior": [0.3, 0.25, 0.7, 0.65]
+  },
+  "driving": {
+    "path": "testmedia/Enzo Fernandez Enzo Fernández GIF - Enzo fernandez Enzo fernández World cup 2026 - Discover & Share GIFs-(324p).mp4",
+    "sha256": "dd1ce7d9ed8d08a206981fe750ed2e71f5a8977ecfdf1e4b86e837890dadb92e",
+    "subject": "The foreground footballer, continuously visible; raised arms belong to him",
+    "interior": [0.3, 0.3, 0.7, 0.8],
+    "start_ms": 0,
+    "duration_ms": 3410
+  }
+}

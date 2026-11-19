@@ -1,0 +1,1075 @@
+{
+  "CLIPLoader": {
+    "input": {
+      "optional": {
+        "device": [
+          [
+            "default",
+            "cpu"
+          ],
+          {
+            "advanced": true
+          }
+        ]
+      },
+      "required": {
+        "clip_name": [
+          []
+        ],
+        "type": [
+          [
+            "stable_diffusion",
+            "stable_cascade",
+            "sd3",
+            "stable_audio",
+            "mochi",
+            "ltxv",
+            "pixart",
+            "cosmos",
+            "lumina2",
+            "wan",
+            "hidream",
+            "chroma",
+            "ace",
+            "omnigen2",
+            "qwen_image",
+            "hunyuan_image",
+            "flux2",
+            "ovis",
+            "longcat_image",
+            "cogvideox",
+            "lens",
+            "pixeldit",
+            "ideogram4",
+            "boogu",
+            "krea2",
+            "joyimage",
+            "mage",
+            "minimax",
+            "yue2",
+            "flux3",
+            "moss_image"
+          ]
+        ]
+      }
+    },
+    "output": [
+      "CLIP"
+    ]
+  },
+  "CLIPTextEncode": {
+    "input": {
+      "required": {
+        "clip": [
+          "CLIP",
+          {
+            "tooltip": "The CLIP model used for encoding the text."
+          }
+        ],
+        "text": [
+          "STRING",
+          {
+            "dynamicPrompts": true,
+            "multiline": true,
+            "tooltip": "The text to be encoded."
+          }
+        ]
+      }
+    },
+    "output": [
+      "CONDITIONING"
+    ]
+  },
+  "CLIPVisionEncode": {
+    "input": {
+      "required": {
+        "clip_vision": [
+          "CLIP_VISION"
+        ],
+        "crop": [
+          [
+            "center",
+            "none"
+          ]
+        ],
+        "image": [
+          "IMAGE"
+        ]
+      }
+    },
+    "output": [
+      "CLIP_VISION_OUTPUT"
+    ]
+  },
+  "CLIPVisionLoader": {
+    "input": {
+      "required": {
+        "clip_name": [
+          []
+        ]
+      }
+    },
+    "output": [
+      "CLIP_VISION"
+    ]
+  },
+  "EasyCache": {
+    "api_node": false,
+    "category": "advanced/debug",
+    "deprecated": false,
+    "description": "Native EasyCache implementation.",
+    "dev_only": false,
+    "display_name": "EasyCache",
+    "essentials_category": null,
+    "experimental": true,
+    "has_intermediate_output": false,
+    "input": {
+      "required": {
+        "end_percent": [
+          "FLOAT",
+          {
+            "advanced": true,
+            "default": 0.95,
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "The relative sampling step to end use of EasyCache."
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The model to add EasyCache to."
+          }
+        ],
+        "reuse_threshold": [
+          "FLOAT",
+          {
+            "advanced": true,
+            "default": 0.2,
+            "max": 3.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "The threshold for reusing cached steps."
+          }
+        ],
+        "start_percent": [
+          "FLOAT",
+          {
+            "advanced": true,
+            "default": 0.15,
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "The relative sampling step to begin use of EasyCache."
+          }
+        ],
+        "verbose": [
+          "BOOLEAN",
+          {
+            "advanced": true,
+            "default": false,
+            "tooltip": "Whether to log verbose information."
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "model",
+        "reuse_threshold",
+        "start_percent",
+        "end_percent",
+        "verbose"
+      ]
+    },
+    "is_input_list": false,
+    "name": "EasyCache",
+    "output": [
+      "MODEL"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_matchtypes": null,
+    "output_name": [
+      "MODEL"
+    ],
+    "output_node": false,
+    "output_tooltips": [
+      "The model with EasyCache."
+    ],
+    "price_badge": null,
+    "python_module": "comfy_extras.nodes_easycache",
+    "search_aliases": null
+  },
+  "GetVideoComponents": {
+    "input": {
+      "required": {
+        "video": [
+          "VIDEO",
+          {
+            "tooltip": "The video to extract components from."
+          }
+        ]
+      }
+    },
+    "output": [
+      "IMAGE",
+      "AUDIO",
+      "FLOAT",
+      "COMBO",
+      "COMBO"
+    ]
+  },
+  "ImageFromBatch": {
+    "input": {
+      "required": {
+        "batch_index": [
+          "INT",
+          {
+            "default": 0,
+            "max": 16384,
+            "min": -16384
+          }
+        ],
+        "image": [
+          "IMAGE",
+          {}
+        ],
+        "length": [
+          "INT",
+          {
+            "default": 1,
+            "max": 4096,
+            "min": 1
+          }
+        ]
+      }
+    },
+    "output": [
+      "IMAGE"
+    ]
+  },
+  "KSampler": {
+    "input": {
+      "required": {
+        "cfg": [
+          "FLOAT",
+          {
+            "default": 8.0,
+            "max": 100.0,
+            "min": 0.0,
+            "round": 0.01,
+            "step": 0.1,
+            "tooltip": "The Classifier-Free Guidance scale balances creativity and adherence to the prompt. Higher values result in images more closely matching the prompt however too high values will negatively impact quality."
+          }
+        ],
+        "denoise": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "The amount of denoising applied, lower values will maintain the structure of the initial image allowing for image to image sampling."
+          }
+        ],
+        "latent_image": [
+          "LATENT",
+          {
+            "tooltip": "The latent image to denoise."
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The model used for denoising the input latent."
+          }
+        ],
+        "negative": [
+          "CONDITIONING",
+          {
+            "tooltip": "The conditioning describing the attributes you want to exclude from the image."
+          }
+        ],
+        "positive": [
+          "CONDITIONING",
+          {
+            "tooltip": "The conditioning describing the attributes you want to include in the image."
+          }
+        ],
+        "sampler_name": [
+          [
+            "euler",
+            "euler_cfg_pp",
+            "euler_ancestral",
+            "euler_ancestral_cfg_pp",
+            "heun",
+            "heunpp2",
+            "exp_heun_2_x0",
+            "exp_heun_2_x0_sde",
+            "dpm_2",
+            "dpm_2_ancestral",
+            "lms",
+            "dpm_fast",
+            "dpm_adaptive",
+            "dpmpp_2s_ancestral",
+            "dpmpp_2s_ancestral_cfg_pp",
+            "dpmpp_sde",
+            "dpmpp_sde_gpu",
+            "dpmpp_2m",
+            "dpmpp_2m_cfg_pp",
+            "dpmpp_2m_sde",
+            "dpmpp_2m_sde_gpu",
+            "dpmpp_2m_sde_heun",
+            "dpmpp_2m_sde_heun_gpu",
+            "dpmpp_3m_sde",
+            "dpmpp_3m_sde_gpu",
+            "ddpm",
+            "lcm",
+            "ipndm",
+            "ipndm_v",
+            "deis",
+            "cfgpp_ud10_ab",
+            "res_multistep",
+            "res_multistep_cfg_pp",
+            "res_multistep_ancestral",
+            "res_multistep_ancestral_cfg_pp",
+            "gradient_estimation",
+            "gradient_estimation_cfg_pp",
+            "er_sde",
+            "seeds_2",
+            "seeds_3",
+            "sa_solver",
+            "sa_solver_pece",
+            "ddim",
+            "uni_pc",
+            "uni_pc_bh2"
+          ],
+          {
+            "tooltip": "The algorithm used when sampling, this can affect the quality, speed, and style of the generated output."
+          }
+        ],
+        "scheduler": [
+          [
+            "simple",
+            "sgm_uniform",
+            "karras",
+            "exponential",
+            "ddim_uniform",
+            "beta",
+            "normal",
+            "linear_quadratic",
+            "kl_optimal"
+          ],
+          {
+            "tooltip": "The scheduler controls how noise is gradually removed to form the image."
+          }
+        ],
+        "seed": [
+          "INT",
+          {
+            "control_after_generate": true,
+            "default": 0,
+            "max": 18446744073709551615,
+            "min": 0,
+            "tooltip": "The random seed used for creating the noise."
+          }
+        ],
+        "steps": [
+          "INT",
+          {
+            "default": 20,
+            "max": 10000,
+            "min": 1,
+            "tooltip": "The number of steps used in the denoising process."
+          }
+        ]
+      }
+    },
+    "output": [
+      "LATENT"
+    ]
+  },
+  "LoadImage": {
+    "input": {
+      "required": {
+        "image": [
+          [
+            "example.png"
+          ],
+          {
+            "image_upload": true
+          }
+        ]
+      }
+    },
+    "output": [
+      "IMAGE",
+      "MASK"
+    ]
+  },
+  "LoadVideo": {
+    "input": {
+      "required": {
+        "file": [
+          "COMBO",
+          {
+            "multiselect": false,
+            "options": [],
+            "video_upload": true
+          }
+        ]
+      }
+    },
+    "output": [
+      "VIDEO"
+    ]
+  },
+  "LoraLoaderModelOnly": {
+    "input": {
+      "required": {
+        "lora_name": [
+          []
+        ],
+        "model": [
+          "MODEL"
+        ],
+        "strength_model": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "max": 100.0,
+            "min": -100.0,
+            "step": 0.01
+          }
+        ]
+      }
+    },
+    "output": [
+      "MODEL"
+    ]
+  },
+  "ModelAttentionBackend": {
+    "api_node": false,
+    "category": "model/patch",
+    "deprecated": false,
+    "description": "Selects the dense attention implementation for the model. When used with Block Sparse Attention, this backend is used whenever sparse attention is inactive or unsupported.",
+    "dev_only": false,
+    "display_name": "Model Attention Backend",
+    "essentials_category": null,
+    "experimental": true,
+    "has_intermediate_output": false,
+    "input": {
+      "required": {
+        "attention": [
+          "COMBO",
+          {
+            "default": "pytorch attention",
+            "display_name": "backend",
+            "multiselect": false,
+            "options": [
+              "pytorch attention"
+            ],
+            "tooltip": "The dense attention backend. Comfy Kitchen attention uses quantized INT8 attention and is available only on Nvidia and AMD GPUs."
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The model to patch."
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "model",
+        "attention"
+      ]
+    },
+    "is_input_list": false,
+    "name": "ModelAttentionBackend",
+    "output": [
+      "MODEL"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_matchtypes": null,
+    "output_name": [
+      "model"
+    ],
+    "output_node": false,
+    "output_tooltips": [
+      "The model with the selected attention backend."
+    ],
+    "price_badge": null,
+    "python_module": "comfy_extras.nodes_model_advanced",
+    "search_aliases": [
+      "comfy kitchen",
+      "attention",
+      "pytorch",
+      "kitchen attention"
+    ]
+  },
+  "ModelSamplingSD3": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL"
+        ],
+        "shift": [
+          "FLOAT",
+          {
+            "default": 3.0,
+            "max": 100.0,
+            "min": 0.0,
+            "step": 0.01
+          }
+        ]
+      }
+    },
+    "output": [
+      "MODEL"
+    ]
+  },
+  "SAM3_Detect": {
+    "input": {
+      "optional": {
+        "bboxes": [
+          "BOUNDING_BOX",
+          {
+            "default": {
+              "height": 512,
+              "width": 512,
+              "x": 0,
+              "y": 0
+            },
+            "display_name": "bboxes",
+            "forceInput": true,
+            "socketless": true,
+            "tooltip": "Bounding boxes to segment within"
+          }
+        ],
+        "conditioning": [
+          "CONDITIONING",
+          {
+            "display_name": "conditioning",
+            "tooltip": "Text conditioning from CLIPTextEncode"
+          }
+        ],
+        "negative_coords": [
+          "STRING",
+          {
+            "display_name": "negative_coords",
+            "forceInput": true,
+            "multiline": false,
+            "tooltip": "Negative point prompts as JSON [{\"x\": int, \"y\": int}, ...] (pixel coords)"
+          }
+        ],
+        "positive_coords": [
+          "STRING",
+          {
+            "display_name": "positive_coords",
+            "forceInput": true,
+            "multiline": false,
+            "tooltip": "Positive point prompts as JSON [{\"x\": int, \"y\": int}, ...] (pixel coords)"
+          }
+        ]
+      },
+      "required": {
+        "image": [
+          "IMAGE",
+          {
+            "display_name": "image"
+          }
+        ],
+        "individual_masks": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "display_name": "individual_masks",
+            "tooltip": "Output per-object masks instead of union"
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "display_name": "model"
+          }
+        ],
+        "refine_iterations": [
+          "INT",
+          {
+            "default": 2,
+            "display_name": "refine_iterations",
+            "max": 5,
+            "min": 0,
+            "tooltip": "SAM decoder refinement passes (0=use raw detector masks)"
+          }
+        ],
+        "threshold": [
+          "FLOAT",
+          {
+            "default": 0.5,
+            "display_name": "threshold",
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01
+          }
+        ]
+      }
+    },
+    "output": [
+      "MASK",
+      "BOUNDING_BOX"
+    ]
+  },
+  "SAM3_VideoTrack": {
+    "input": {
+      "optional": {
+        "conditioning": [
+          "CONDITIONING",
+          {
+            "display_name": "conditioning",
+            "tooltip": "Text conditioning for detecting new objects during tracking"
+          }
+        ],
+        "initial_mask": [
+          "MASK",
+          {
+            "display_name": "initial_mask",
+            "tooltip": "Mask(s) for the first frame to track (one per object)"
+          }
+        ]
+      },
+      "required": {
+        "detect_interval": [
+          "INT",
+          {
+            "default": 1,
+            "display_name": "detect_interval",
+            "min": 1,
+            "tooltip": "Run detection every N frames (1=every frame). Higher values save compute."
+          }
+        ],
+        "detection_threshold": [
+          "FLOAT",
+          {
+            "default": 0.5,
+            "display_name": "detection_threshold",
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "Score threshold for text-prompted detection."
+          }
+        ],
+        "images": [
+          "IMAGE",
+          {
+            "display_name": "images",
+            "tooltip": "Video frames as batched images"
+          }
+        ],
+        "max_objects": [
+          "INT",
+          {
+            "default": 4,
+            "display_name": "max_objects",
+            "max": 64,
+            "min": 0,
+            "tooltip": "Max tracked objects. Initial masks count toward this limit. 0 uses the internal cap of 64."
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "display_name": "model"
+          }
+        ]
+      }
+    },
+    "output": [
+      "SAM3_TRACK_DATA"
+    ]
+  },
+  "SCAIL2ColoredMask": {
+    "input": {
+      "optional": {
+        "ref_track_data": [
+          "SAM3_TRACK_DATA,MASK",
+          {
+            "display_name": "reference_masks",
+            "tooltip": "SAM3 track of the reference image(s) (one identity per object, colored in batch order), or a plain MASK of the reference subject (rendered as a single identity)."
+          }
+        ]
+      },
+      "required": {
+        "driving_track_data": [
+          "SAM3_TRACK_DATA",
+          {
+            "tooltip": "SAM3 track of the driving pose video. Will be rendered into the pose_video_mask output."
+          }
+        ],
+        "object_indices": [
+          "STRING",
+          {
+            "default": "",
+            "multiline": false,
+            "tooltip": "Comma-separated list of person indices to include (e.g. '0,2,3'). Applied to both reference and pose video masks. Empty = all."
+          }
+        ],
+        "replacement_mode": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "False = Animation Mode (pose_video_mask has black background, reference_image_mask has white background). True = Replacement Mode (pose_video_mask has white background, reference_image_mask has black background)."
+          }
+        ],
+        "sort_by": [
+          "COMBO",
+          {
+            "default": "left_to_right",
+            "multiselect": false,
+            "options": [
+              "none",
+              "left_to_right",
+              "area"
+            ],
+            "tooltip": "Order in which palette colors are assigned to the tracked objects (applied to both reference and pose video so each identity keeps the same color). Objects that appear in earlier frames always come first; within a frame, left_to_right = leftmost object (by centroid at first appearance) gets the first color, area = biggest object (by mask area at first appearance) gets the first color; none = keep SAM3's order."
+          }
+        ]
+      }
+    },
+    "output": [
+      "IMAGE",
+      "IMAGE"
+    ]
+  },
+  "SaveImage": {
+    "input": {
+      "hidden": {
+        "extra_pnginfo": "EXTRA_PNGINFO",
+        "prompt": "PROMPT"
+      },
+      "required": {
+        "filename_prefix": [
+          "STRING",
+          {
+            "default": "ComfyUI",
+            "tooltip": "The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."
+          }
+        ],
+        "images": [
+          "IMAGE",
+          {
+            "tooltip": "The images to save."
+          }
+        ]
+      }
+    },
+    "output": [
+      "IMAGE"
+    ]
+  },
+  "UNETLoader": {
+    "input": {
+      "required": {
+        "unet_name": [
+          []
+        ],
+        "weight_dtype": [
+          [
+            "default",
+            "fp8_e4m3fn",
+            "fp8_e4m3fn_fast",
+            "fp8_e5m2"
+          ],
+          {
+            "advanced": true
+          }
+        ]
+      }
+    },
+    "output": [
+      "MODEL"
+    ]
+  },
+  "VAEDecode": {
+    "category": "model/latent",
+    "description": "Decodes latent images back into pixel space images.",
+    "display_name": "VAE Decode",
+    "has_intermediate_output": false,
+    "input": {
+      "required": {
+        "samples": [
+          "LATENT",
+          {
+            "tooltip": "The latent to be decoded."
+          }
+        ],
+        "vae": [
+          "VAE",
+          {
+            "tooltip": "The VAE model used for decoding the latent."
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "samples",
+        "vae"
+      ]
+    },
+    "is_input_list": false,
+    "name": "VAEDecode",
+    "output": [
+      "IMAGE"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_name": [
+      "IMAGE"
+    ],
+    "output_node": false,
+    "output_tooltips": [
+      "The decoded image."
+    ],
+    "python_module": "nodes",
+    "search_aliases": [
+      "decode",
+      "decode latent",
+      "latent to image",
+      "render latent"
+    ]
+  },
+  "VAEDecodeTiled": {
+    "input": {
+      "required": {
+        "overlap": [
+          "INT",
+          {
+            "advanced": true,
+            "default": 64,
+            "max": 4096,
+            "min": 0,
+            "step": 32
+          }
+        ],
+        "samples": [
+          "LATENT"
+        ],
+        "temporal_overlap": [
+          "INT",
+          {
+            "advanced": true,
+            "default": 8,
+            "max": 4096,
+            "min": 4,
+            "step": 4,
+            "tooltip": "Only used for video VAEs: Amount of frames to overlap."
+          }
+        ],
+        "temporal_size": [
+          "INT",
+          {
+            "advanced": true,
+            "default": 64,
+            "max": 4096,
+            "min": 8,
+            "step": 4,
+            "tooltip": "Only used for video VAEs: Amount of frames to decode at a time."
+          }
+        ],
+        "tile_size": [
+          "INT",
+          {
+            "advanced": true,
+            "default": 512,
+            "max": 4096,
+            "min": 64,
+            "step": 32
+          }
+        ],
+        "vae": [
+          "VAE"
+        ]
+      }
+    },
+    "output": [
+      "IMAGE"
+    ]
+  },
+  "VAELoader": {
+    "input": {
+      "required": {
+        "vae_name": [
+          [
+            "pixel_space"
+          ]
+        ]
+      }
+    },
+    "output": [
+      "VAE"
+    ]
+  },
+  "WanSCAILToVideo": {
+    "input": {
+      "optional": {
+        "clip_vision_output": [
+          "CLIP_VISION_OUTPUT",
+          {
+            "tooltip": "CLIP vision features for conditioning. Model is trained with stretch resize to aspect ratio."
+          }
+        ],
+        "pose_video": [
+          "IMAGE",
+          {
+            "tooltip": "Video used for pose conditioning. Will be downscaled to half the resolution of the main video."
+          }
+        ],
+        "pose_video_mask": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Colored per-identity SAM3 mask video at the same resolution as pose_video."
+          }
+        ],
+        "previous_frames": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Full decoded output of the previous chunk. Only the last previous_frame_count are used as the extension anchor."
+          }
+        ],
+        "reference_image": [
+          "IMAGE",
+          {
+            "tooltip": "Reference image. The first image is the primary reference (composite all identities onto it). SCAIL-2: extra batch images are used as additional views (back view, close-up, occluded background), each needing a matching reference_image_mask in that identity's color."
+          }
+        ],
+        "reference_image_mask": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Colored reference mask, batch matching reference_image (first = primary reference mask, rest = identity masks for the additional reference_image)."
+          }
+        ],
+        "replacement_mode": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "SCAIL-2 only. False = Animation Mode (pose_video_mask should have black background). True = Replacement Mode (pose_video_mask should have white background)."
+          }
+        ]
+      },
+      "required": {
+        "batch_size": [
+          "INT",
+          {
+            "default": 1,
+            "max": 4096,
+            "min": 1
+          }
+        ],
+        "height": [
+          "INT",
+          {
+            "default": 896,
+            "max": 16384,
+            "min": 32,
+            "step": 32
+          }
+        ],
+        "length": [
+          "INT",
+          {
+            "default": 81,
+            "max": 16384,
+            "min": 1,
+            "step": 4
+          }
+        ],
+        "negative": [
+          "CONDITIONING",
+          {}
+        ],
+        "pose_end": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "End step of the pose conditioning."
+          }
+        ],
+        "pose_start": [
+          "FLOAT",
+          {
+            "default": 0.0,
+            "max": 1.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "Start step of the pose conditioning."
+          }
+        ],
+        "pose_strength": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "max": 10.0,
+            "min": 0.0,
+            "step": 0.01,
+            "tooltip": "Strength of the pose latent."
+          }
+        ],
+        "positive": [
+          "CONDITIONING",
+          {}
+        ],
+        "previous_frame_count": [
+          "INT",
+          {
+            "default": 5,
+            "max": 16384,
+            "min": 1,
+            "step": 4,
+            "tooltip": "Tail frames of previous_frames to anchor. SCAIL-2 trained at 5 (81-frame chunks, 76-frame step)."
+          }
+        ],
+        "vae": [
+          "VAE",
+          {}
+        ],
+        "video_frame_offset": [
+          "INT",
+          {
+            "default": 0,
+            "max": 16384,
+            "min": 0,
+            "step": 1,
+            "tooltip": "Cumulative output frame this chunk begins at. Wire from the previous chunk's video_frame_offset output."
+          }
+        ],
+        "width": [
+          "INT",
+          {
+            "default": 512,
+            "max": 16384,
+            "min": 32,
+            "step": 32
+          }
+        ]
+      }
+    },
+    "output": [
+      "CONDITIONING",
+      "CONDITIONING",
+      "LATENT",
+      "INT"
+    ]
+  }
+}

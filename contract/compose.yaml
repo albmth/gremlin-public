@@ -1,0 +1,15 @@
+# Local AWS emulators for the contract suite's `aws` target. Ports bind to loopback only.
+name: gremlin-contract
+# DynamoDB Local 3 accepts only alphanumeric access keys, so both emulators share these.
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:3.1.0@sha256:7ef4a2c45b58c2901e70a4f28e0953a422c2c631baaaf5e2c15e0805740c7752
+    command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
+    ports: ["127.0.0.1:8001:8000"]
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: gremlinlocal
+      MINIO_ROOT_PASSWORD: gremlinlocalsecret
+    ports: ["127.0.0.1:9100:9000"]

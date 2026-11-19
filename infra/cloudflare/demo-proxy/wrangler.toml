@@ -1,0 +1,8 @@
+# The public website's custom domain: a Cloudflare Worker in front of the website's Function URL
+# (no AWS change beyond PublicOrigin; Workers free plan). See README.md for the deploy command;
+# ORIGIN is passed at deploy time so the Function URL stays out of Git.
+name = "gremlin-demo-proxy"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+routes = [{ pattern = "demo.albmth.dev", custom_domain = true }]

@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Gremlin prompt safety in Ireland using standalone CLASSIC Bedrock Guardrails.
+  No model invocation, cross-region routing or content logging resources.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+Resources:
+  PromptGuardrail:
+    Type: AWS::Bedrock::Guardrail
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: managed prompt screening before GPU admission; visual screening uses Rekognition separately
+        must:
+          - Deploy only in eu-west-1; do not enable prompt or content logging.
+          - Permit benign sports, martial arts and consensual non-explicit identity transfer.
+    Properties:
+      Name: !Sub ${AWS::StackName}-prompt
+      Description: Gremlin preventive prompt policy for identity-transfer animation.
+      BlockedInputMessaging: Content did not pass the safety policy.
+      BlockedOutputsMessaging: Content did not pass the safety policy.
+      ContentPolicyConfig:
+        ContentFiltersTierConfig: {TierName: CLASSIC}
+        FiltersConfig:
+          - {Type: HATE, InputStrength: HIGH, OutputStrength: HIGH}
+          - {Type: INSULTS, InputStrength: MEDIUM, OutputStrength: MEDIUM}
+          - {Type: VIOLENCE, InputStrength: MEDIUM, OutputStrength: MEDIUM}
+      TopicPolicyConfig:
+        TopicsTierConfig: {TierName: CLASSIC}
+        TopicsConfig:
+          # The built-in SEXUAL filter refused a benign adult kiss at HIGH and MEDIUM.
+          # A narrow denied topic implements the owner's explicit-content boundary.
+          - Name: SexualIntercourseAndMasturbation
+            Type: DENY
+            Definition: Explicit visible genital penetration, oral-genital contact, sexual intercourse, masturbation or exposed sexual organs.
+            Examples:
+              - Show visible genital penetration during sexual intercourse.
+              - Show an exposed penis being masturbated.
+          - Name: SexualExploitation
+            Type: DENY
+            Definition: Sexual exploitation, sexual content involving minors, or nonconsensual sexual imagery.
+          - Name: HarmfulDeceptiveImpersonation
+            Type: DENY
+            Definition: Impersonating a real person to deceive others for fraud, abuse, defamation or fabricated evidence.
+          - Name: SelfHarmAndExtremismIncitement
+            Type: DENY
+            Definition: Encouraging, instructing or glorifying suicide, self-harm, terrorism or extremist violence.
+          - Name: GraphicTorture
+            Type: DENY
+            Definition: Depictions of graphic torture, mutilation, gore or sadistic injury.
+      Tags:
+        - {Key: project, Value: gremlin}
+  PolicyVersion5:
+    Type: AWS::Bedrock::GuardrailVersion
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: immutable policy snapshot pinned by both workload environments
+        must:
+          - Create a new numbered snapshot after policy edits; never deploy DRAFT.
+    Properties:
+      GuardrailIdentifier: !GetAtt PromptGuardrail.GuardrailId
+      Description: Owner-approved preventive policy 2026-10-28 v5; narrowly defined prohibited acts.
+Outputs:
+  GuardrailId: {Value: !GetAtt PromptGuardrail.GuardrailId}
+  GuardrailArn: {Value: !GetAtt PromptGuardrail.GuardrailArn}
+  GuardrailVersion: {Value: !GetAtt PolicyVersion5.Version}

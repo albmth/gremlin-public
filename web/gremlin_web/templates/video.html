@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block page %}video{% endblock %}
+{% block main %}
+<div class="narrow stack" data-gid="{{ gid }}">
+  <div class="page-head">
+    <a href="/" class="back small muted">← Back</a>
+    <h1 data-title>Video</h1>
+    <p class="muted small" data-subtitle>Loading…</p>
+  </div>
+
+  <section class="card stack" data-choose hidden>
+    <div class="stack-sm">
+      <h2 data-choose-title>Choose who</h2>
+      <p class="small muted" data-choose-note></p>
+    </div>
+    <p class="notice" data-tone="error" data-choose-error hidden></p>
+    <fieldset class="stack choice-fields" data-choice-fields>
+      <div class="choice-grid" data-choose-sides></div>
+      <div class="stack-sm">
+        <h3>Selected interval</h3>
+        <p class="small muted" data-interval-note></p>
+        <video class="preview" controls muted playsinline loop data-selected-clip hidden aria-label="Selected interval"></video>
+        <details data-source-preview>
+          <summary>Watch the original to choose another interval</summary>
+          <video class="preview" controls muted playsinline preload="metadata" data-source-clip hidden aria-label="Original video"></video>
+          <img class="preview" data-source-image hidden alt="Original animated clip">
+          <button class="btn btn-ghost btn-sm" type="button" data-use-time hidden>Use current time as start</button>
+        </details>
+        <div class="row">
+          <label>Start (seconds)<input class="input" type="number" min="0" max="60" step="0.001" required data-interval-start></label>
+          <label>Duration (seconds)<input class="input" type="number" min="3" max="5" step="0.001" required data-interval-duration></label>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" type="button" data-prepare>Change interval</button>
+          <button class="btn btn-ghost btn-sm" type="button" data-retry>Retry preparation</button>
+          <a class="btn btn-ghost btn-sm" data-replace-files>Replace files</a>
+        </div>
+        <p class="hint">Changing the interval prepares a new first frame and subject choice. It does not use another video.</p>
+        <p class="hint" data-interval-dirty hidden>Use Change interval to prepare and review your new selection before generating.</p>
+      </div>
+      <details>
+        <summary>Description and motion recipe</summary>
+        <div class="stack-sm">
+          <p class="small muted" data-description-note></p>
+          <label>Description<textarea class="input" rows="5" minlength="20" maxlength="2000" data-description></textarea></label>
+          <label>Motion recipe<select class="input" data-tier>
+            <option value="complex-motion">Complex motion (default)</option>
+            <option value="simple-motion">Simple motion</option>
+          </select></label>
+          <p class="hint">Simple motion: real people moving naturally. Complex motion: animals, cartoons and fast action. Both were tuned on two clips with hand-written descriptions.</p>
+        </div>
+      </details>
+    </fieldset>
+    <div class="row">
+      <a class="btn btn-accent" data-replace-only hidden>Replace files</a>
+      <button class="btn btn-accent" type="button" data-continue disabled>Generate</button>
+      <button class="btn btn-ghost" type="button" data-cancel-choice>Cancel</button>
+    </div>
+    <p class="hint">Private preview · Deleted when you close it · <a href="/terms">Terms</a></p>
+  </section>
+
+  <dialog class="result-preview" data-result aria-labelledby="preview-title">
+    <h2 id="preview-title">Your private preview</h2>
+    <div class="player"><video controls playsinline loop muted autoplay data-player></video></div>
+    <div class="row center">
+      <a class="btn btn-accent" data-download="result.mp4">Download</a>
+      <button class="btn btn-ghost" type="button" data-close-result>Close and delete</button>
+    </div>
+    <p class="hint center-text">Only you can view this. Closing deletes the preview.</p>
+    <p class="notice" data-tone="error" data-preview-error hidden></p>
+  </dialog>
+
+  <section class="card stack" data-failure hidden>
+    <h2 data-failure-title>What happened</h2>
+    <p data-failure-message></p>
+    <div class="row"><a class="btn btn-accent" href="/">Try again</a></div>
+  </section>
+
+  <section class="card stack progress-card" data-progress-card hidden>
+    <div class="progress-head">
+      <div class="progress-title">
+        <h2 data-step>Making your video</h2>
+        <p class="small muted" data-now></p>
+      </div>
+      <span class="elapsed num" data-elapsed aria-label="Elapsed time"></span>
+    </div>
+    <ol class="stages" data-timeline aria-label="Stages"></ol>
+    <p class="visually-hidden" data-activity aria-live="polite"></p>
+    <p class="small muted" data-progress-foot>Usually 2 to 10 minutes; the first video after a quiet spell is the slow one. You can close this page.</p>
+    <div class="row" data-cancel-row hidden><button class="btn btn-ghost btn-sm" type="button" data-cancel>Cancel</button><span class="small muted" data-cancel-note></span></div>
+  </section>
+
+  <div class="row" data-delete-row hidden>
+    <button class="btn btn-ghost btn-sm" type="button" data-delete>Delete</button>
+    <span class="row" data-delete-confirm hidden>
+      <button class="btn btn-danger btn-sm" type="button" data-delete-yes>Delete for good</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-delete-no>Keep</button>
+    </span>
+  </div>
+  <p class="notice" data-tone="error" data-error hidden></p>
+</div>
+{% endblock %}
